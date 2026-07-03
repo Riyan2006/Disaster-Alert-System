@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setu — Build Plan v2</title>
+<style>
+  :root{
+    --bg: #11161C;
+    --bg-raised: #161D26;
+    --bg-card: #1A222C;
+    --line: #283140;
+    --line-soft: #1F2733;
+    --text: #EDEFF2;
+    --text-dim: #8A93A3;
+    --text-faint: #5C6675;
+    --amber: #F5A623;
+    --amber-dim: #6B5526;
+    --red: #E5484D;
+    --red-dim: #5C2629;
+    --green: #3DD68C;
+    --green-dim: #1E4A38;
+    --blue: #4FA3F7;
+    --blue-dim: #1E3A5C;
+    --purple: #B58CF0;
+    --purple-dim: #3A2E5C;
+    --mono: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html{ scroll-behavior: smooth; }
+
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before{
+    content:'';
+    position: fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  a{ color: var(--blue); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+  ::selection{ background: var(--amber-dim); color: var(--text); }
+  :focus-visible{ outline: 2px solid var(--amber); outline-offset: 2px; }
+
+  .shell{
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    max-width: 1440px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  @media (max-width: 900px){ .shell{ grid-template-columns: 1fr; } }
+
+  .nav{
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    padding: 32px 20px;
+    border-right: 1px solid var(--line);
+    scrollbar-width: thin;
+  }
+  @media (max-width: 900px){
+    .nav{ position: static; height: auto; border-right:none; border-bottom: 1px solid var(--line); padding: 24px 24px 16px; }
+  }
+
+  .nav-brand{ display:flex; align-items:center; gap:10px; margin-bottom: 24px; }
+  .nav-brand-mark{ width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, var(--amber), var(--red)); flex-shrink:0; position: relative; }
+  .nav-brand-mark::after{ content:''; position:absolute; inset: 6px; background: var(--bg); border-radius: 2px; }
+  .nav-brand-text{ font-family: var(--mono); font-size: 15px; font-weight: 700; letter-spacing: 0.02em; }
+  .nav-brand-sub{ font-family: var(--mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .nav-changelog{
+    background: var(--bg-card);
+    border: 1px solid var(--purple-dim);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 24px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .nav-changelog strong{ color: var(--purple); display:block; margin-bottom: 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .nav-section{ margin-bottom: 20px; }
+  .nav-section-label{ font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; padding-left: 10px; }
+  .nav-link{ display:block; font-size: 13.5px; color: var(--text-dim); padding: 6px 10px; border-radius: 6px; border-left: 2px solid transparent; transition: all 0.15s ease; }
+  .nav-link:hover{ color: var(--text); background: var(--bg-raised); text-decoration:none; }
+
+  .nav-status{ margin-top: 24px; padding: 14px; background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+  .nav-status-row{ display:flex; justify-content: space-between; padding: 3px 0; }
+  .nav-status-dot{ display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:6px; }
+
+  .main{ padding: 0 0 120px; min-width: 0; }
+
+  .hero{ padding: 56px 56px 44px; border-bottom: 1px solid var(--line); }
+  @media (max-width: 900px){ .hero{ padding: 36px 24px 28px; } }
+
+  .hero-eyebrow{ font-family: var(--mono); font-size: 12px; color: var(--amber); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 16px; }
+  .hero h1{ font-size: 40px; line-height: 1.12; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 16px; }
+  @media (max-width: 600px){ .hero h1{ font-size: 28px; } }
+  .hero-sub{ font-size: 17px; color: var(--text-dim); max-width: 660px; margin-bottom: 32px; }
+
+  .state-strip{ display:flex; align-items: center; gap: 0; background: var(--bg-raised); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; overflow-x: auto; }
+  .state-node{ display:flex; flex-direction:column; align-items:center; gap:10px; min-width: 130px; position: relative; }
+  .state-dot{ width: 16px; height:16px; border-radius: 50%; position: relative; flex-shrink:0; }
+  .state-dot.live{ background: var(--green); animation: pulse-green 2s infinite; }
+  .state-dot.armed{ background: var(--amber); animation: pulse-amber 2s infinite; animation-delay: 0.4s;}
+  .state-dot.lost{ background: var(--text-faint); }
+  .state-dot.fired{ background: var(--red); animation: pulse-red 1.2s infinite; animation-delay: 1.2s; }
+
+  @keyframes pulse-green{ 0%{box-shadow:0 0 0 0 rgba(61,214,140,0.45);} 70%{box-shadow:0 0 0 9px rgba(61,214,140,0);} 100%{box-shadow:0 0 0 0 rgba(61,214,140,0);} }
+  @keyframes pulse-amber{ 0%{box-shadow:0 0 0 0 rgba(245,166,35,0.45);} 70%{box-shadow:0 0 0 9px rgba(245,166,35,0);} 100%{box-shadow:0 0 0 0 rgba(245,166,35,0);} }
+  @keyframes pulse-red{ 0%{box-shadow:0 0 0 0 rgba(229,72,77,0.5);} 70%{box-shadow:0 0 0 10px rgba(229,72,77,0);} 100%{box-shadow:0 0 0 0 rgba(229,72,77,0);} }
+
+  .state-label{ font-family: var(--mono); font-size: 12px; text-align:center; }
+  .state-label strong{ display:block; font-size: 12.5px; margin-bottom: 2px; }
+  .state-label span{ color: var(--text-faint); font-size: 10.5px; }
+  .state-arrow{ flex: 1; height: 1px; background: repeating-linear-gradient(90deg, var(--line) 0, var(--line) 6px, transparent 6px, transparent 11px); margin: 0 6px; position: relative; top: -22px; min-width: 24px; }
+  .reduced-motion-note{ font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); margin-top: 14px; }
+  @media (prefers-reduced-motion: reduce){ .state-dot{ animation: none !important; } }
+
+  section{ padding: 52px 56px; border-bottom: 1px solid var(--line); }
+  @media (max-width: 900px){ section{ padding: 36px 24px; } }
+
+  .section-head{ margin-bottom: 30px; max-width: 760px; }
+  .section-kicker{ font-family: var(--mono); font-size: 11.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .section-head h2{ font-size: 27px; font-weight: 750; letter-spacing: -0.01em; margin-bottom: 12px; }
+  .section-head p{ color: var(--text-dim); font-size: 15px; max-width: 680px; }
+
+  .callout{ border-radius: 10px; padding: 16px 18px; margin: 18px 0; border: 1px solid var(--line); background: var(--bg-card); font-size: 14px; color: var(--text-dim); }
+  .callout-label{ font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display:block; }
+  .callout.risk{ border-color: var(--red-dim); } .callout.risk .callout-label{ color: var(--red); }
+  .callout.solid{ border-color: var(--green-dim); } .callout.solid .callout-label{ color: var(--green); }
+  .callout.note{ border-color: var(--amber-dim); } .callout.note .callout-label{ color: var(--amber); }
+  .callout.learn{ border-color: var(--blue-dim); } .callout.learn .callout-label{ color: var(--blue); }
+  .callout.changed{ border-color: var(--purple-dim); } .callout.changed .callout-label{ color: var(--purple); }
+
+  .stage-grid{ display:flex; flex-direction:column; gap: 18px; }
+  .stage-card{ background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 26px 28px; position: relative; }
+  .stage-card-top{ display:flex; align-items:flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .stage-title-group{ display:flex; align-items:center; gap: 12px; }
+  .stage-num{ font-family: var(--mono); font-size: 12px; color: var(--bg); background: var(--text-dim); width: 26px; height: 26px; border-radius: 7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .stage-card h3{ font-size: 19px; font-weight: 700; }
+  .stage-card .stage-tag-row{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  .tag{ font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 9px; border-radius: 100px; border: 1px solid var(--line); color: var(--text-dim); white-space: nowrap; }
+  .tag.priority{ border-color: var(--red-dim); color: var(--red); background: rgba(229,72,77,0.08); }
+  .tag.core{ border-color: var(--amber-dim); color: var(--amber); background: rgba(245,166,35,0.08); }
+  .tag.simple{ border-color: var(--green-dim); color: var(--green); background: rgba(61,214,140,0.08); }
+  .tag.cut{ border-color: var(--line); color: var(--text-faint); }
+  .tag.ml{ border-color: var(--blue-dim); color: var(--blue); background: rgba(79,163,247,0.08); }
+  .tag.new{ border-color: var(--purple-dim); color: var(--purple); background: rgba(181,140,240,0.1); }
+
+  .stage-card p.desc{ color: var(--text-dim); font-size: 14.5px; margin-bottom: 18px; max-width: 700px; }
+
+  .feature-list{ list-style:none; }
+  .feature-list li{ font-size: 14.5px; color: var(--text); padding: 9px 0; border-top: 1px solid var(--line-soft); display:flex; gap: 10px; align-items:flex-start; }
+  .feature-list li:first-child{ border-top:none; }
+  .feature-list li::before{ content:'›'; color: var(--text-faint); font-family: var(--mono); flex-shrink:0; line-height: 1.5; }
+  .feature-list li .f-sub{ display:block; color: var(--text-dim); font-size: 13px; margin-top:2px; }
+
+  .stack-row{ margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line-soft); display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .stack-row .stack-label{ font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); text-transform:uppercase; letter-spacing:0.06em; margin-right: 4px; }
+  .pill{ font-family: var(--mono); font-size: 11.5px; padding: 4px 10px; border-radius: 6px; background: var(--bg-raised); border: 1px solid var(--line); color: var(--text-dim); }
+
+  .cap-table, .model-table{ width:100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+  .cap-table th, .model-table th{ font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); text-align:left; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .cap-table td, .model-table td{ padding: 12px 14px; border-bottom: 1px solid var(--line-soft); color: var(--text-dim); vertical-align: top; }
+  .cap-table td:first-child, .model-table td:first-child{ color: var(--text); font-weight:600; }
+  .cap-table tr:last-child td, .model-table tr:last-child td{ border-bottom:none; }
+  .cap-pill{ font-family: var(--mono); font-size: 11px; padding: 3px 9px; border-radius: 100px; display:inline-block; }
+  .cap-pill.full{ background: rgba(61,214,140,0.12); color: var(--green); }
+  .cap-pill.partial{ background: rgba(245,166,35,0.12); color: var(--amber); }
+  .cap-pill.no{ background: rgba(229,72,77,0.12); color: var(--red); }
+
+  .phase-row{ display:grid; grid-template-columns: 150px 1fr; gap: 20px; padding: 20px 0; border-top: 1px solid var(--line-soft); }
+  .phase-row:first-child{ border-top:none; }
+  @media (max-width: 600px){ .phase-row{ grid-template-columns: 1fr; gap: 6px; } }
+  .phase-when{ font-family: var(--mono); font-size: 12.5px; color: var(--amber); padding-top: 2px; }
+  .phase-body h4{ font-size: 15.5px; margin-bottom: 6px; }
+  .phase-body p{ font-size: 14px; color: var(--text-dim); }
+
+  .crit-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 14px; margin-top: 16px; }
+  .crit-card{ background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .crit-pct{ font-family: var(--mono); font-size: 22px; color: var(--amber); font-weight:700; }
+  .crit-name{ font-size: 13px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; font-family: var(--mono); }
+  .crit-how{ font-size: 13.5px; color: var(--text); margin-top: 8px; line-height:1.5; }
+
+  footer{ padding: 40px 56px; font-family: var(--mono); font-size: 12px; color: var(--text-faint); }
+  @media (max-width: 900px){ footer{ padding: 32px 24px; } }
+
+  code{ font-family: var(--mono); background: var(--bg-raised); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; color: var(--blue); }
+
+  /* pipeline diagram for ML explainer */
+  .pipeline{ display:flex; flex-wrap:wrap; align-items:center; gap: 8px; margin: 20px 0; }
+  .pipeline-step{ background: var(--bg-raised); border: 1px solid var(--line); border-radius: 9px; padding: 10px 14px; font-family: var(--mono); font-size: 12.5px; color: var(--text); }
+  .pipeline-sep{ color: var(--text-faint); font-family: var(--mono); }
+
+  /* metro city chips */
+  .city-grid{ display:flex; flex-wrap:wrap; gap: 10px; margin-top: 16px; }
+  .city-chip{ background: var(--bg-raised); border: 1px solid var(--green-dim); border-radius: 100px; padding: 7px 16px; font-family: var(--mono); font-size: 12.5px; color: var(--green); }
+  .city-chip.fallback{ border-color: var(--line); color: var(--text-dim); }
+
+  /* glossary */
+  .glossary-item{ padding: 16px 0; border-top: 1px solid var(--line-soft); }
+  .glossary-item:first-child{ border-top: none; }
+  .glossary-term{ font-family: var(--mono); font-size: 14px; color: var(--blue); margin-bottom: 6px; font-weight: 600; }
+  .glossary-def{ font-size: 14px; color: var(--text-dim); max-width: 700px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ===== SIDEBAR NAV ===== -->
+  <nav class="nav" aria-label="Document sections">
+    <div class="nav-brand">
+      <div class="nav-brand-mark" aria-hidden="true"></div>
+      <div>
+        <div class="nav-brand-text">SETU</div>
+        <div class="nav-brand-sub">Build Plan v2</div>
+      </div>
+    </div>
+
+    <div class="nav-changelog">
+      <strong>Changed since v1</strong>
+      Real trained ML models (not rules), per disaster type. Trust engine split: algorithm scores, LLM explains. Backtest + historical replay added. Metro-first location coverage. Mesh kept, risk reframed for virtual format.
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <a class="nav-link" href="#intro">What this is</a>
+      <a class="nav-link" href="#pitch">One-line pitch</a>
+      <a class="nav-link" href="#precedent">Honest precedent check</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">The ML core</div>
+      <a class="nav-link" href="#ml-overview">Why three real models</a>
+      <a class="nav-link" href="#ml-pipeline">How a model actually gets built</a>
+      <a class="nav-link" href="#ml-aqi">Model 1 — AQI</a>
+      <a class="nav-link" href="#ml-cyclone">Model 2 — Cyclone</a>
+      <a class="nav-link" href="#ml-flood">Model 3 — Flood</a>
+      <a class="nav-link" href="#ml-coverage">Location coverage strategy</a>
+      <a class="nav-link" href="#ml-eval">Backtest &amp; evaluation</a>
+      <a class="nav-link" href="#ml-glossary">ML terms, plainly explained</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">System</div>
+      <a class="nav-link" href="#stage-0">0 — Data ingestion</a>
+      <a class="nav-link" href="#stage-1">1 — Pre-staging engine</a>
+      <a class="nav-link" href="#stage-2">2 — Trust &amp; verification</a>
+      <a class="nav-link" href="#stage-3">3 — Offline relay</a>
+      <a class="nav-link" href="#stage-4">4 — Incident log</a>
+      <a class="nav-link" href="#stage-5">5 — Public website</a>
+      <a class="nav-link" href="#extras">Small extras</a>
+      <a class="nav-link" href="#cut">Explicitly cut</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Platform</div>
+      <a class="nav-link" href="#platform">PWA vs native</a>
+      <a class="nav-link" href="#demo">The demo script</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Execution</div>
+      <a class="nav-link" href="#timeline">Build order &amp; timeline</a>
+      <a class="nav-link" href="#judging">Judging criteria mapping</a>
+      <a class="nav-link" href="#risks">Risk register</a>
+    </div>
+
+    <div class="nav-status">
+      <div class="nav-status-row"><span><span class="nav-status-dot" style="background:var(--green)"></span>Round 1 deck</span><span>Due Jul 15</span></div>
+      <div class="nav-status-row"><span><span class="nav-status-dot" style="background:var(--amber)"></span>Full build</span><span>Multi-month</span></div>
+      <div class="nav-status-row"><span><span class="nav-status-dot" style="background:var(--blue)"></span>Team</span><span>Solo / vibe-coded</span></div>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <!-- ===== HERO ===== -->
+    <div class="hero" id="intro">
+      <div class="hero-eyebrow">SmartAIthon 2026 · Disaster Prediction &amp; Alert Systems</div>
+      <h1>Setu — a disaster alert that's already on your phone before the disaster is.</h1>
+      <p class="hero-sub">Most alert systems need a live connection at the exact moment everything goes wrong. Setu flips that: real trained models watch the data, decide in advance, and quietly arm your phone while the network still works — so the alert can fire locally even if the network doesn't.</p>
+
+      <div class="state-strip" role="img" aria-label="State machine: online and monitoring, then armed and pre-staged, then network lost, then fired locally">
+        <div class="state-node"><div class="state-dot live"></div><div class="state-label"><strong>Monitoring</strong><span>live data, online</span></div></div>
+        <div class="state-arrow"></div>
+        <div class="state-node"><div class="state-dot armed"></div><div class="state-label"><strong>Armed</strong><span>alert pre-staged on device</span></div></div>
+        <div class="state-arrow"></div>
+        <div class="state-node"><div class="state-dot lost"></div><div class="state-label"><strong>Network lost</strong><span>no server round-trip needed</span></div></div>
+        <div class="state-arrow"></div>
+        <div class="state-node"><div class="state-dot fired"></div><div class="state-label"><strong>Fired locally</strong><span>device acts on its own</span></div></div>
+      </div>
+      <div class="reduced-motion-note">This four-state sequence is still the entire product's demo spine. What changed in v2 is what decides when to arm: a real trained model per disaster type, not a hand-written threshold.</div>
+    </div>
+
+    <!-- ===== PITCH ===== -->
+    <section id="pitch">
+      <div class="section-head">
+        <div class="section-kicker">Framing</div>
+        <h2>The one-line pitch</h2>
+        <p>This is what goes on slide one.</p>
+      </div>
+      <div class="callout solid">
+        <span class="callout-label">Pitch line</span>
+        "Setu trains real machine learning models on years of historical AQI, cyclone, and flood data, uses them to pre-stage disaster alerts on your phone while the network still works, fires them locally the instant trigger conditions are met — no connection required — and relays new, unexpected hazard reports peer-to-peer when the network is down."
+      </div>
+      <p style="color:var(--text-dim); font-size:14.5px; margin-top:18px; max-width:680px;">Three trained models, one spine: <strong style="color:var(--text)">sense → predict → verify → act</strong>. Each disaster type gets its own model trained on its own historical data, because AQI, cyclones, and floods genuinely behave differently and deserve different evidence — but all three feed the same staging-and-firing pipeline downstream.</p>
+    </section>
+
+    <!-- ===== PRECEDENT ===== -->
+    <section id="precedent">
+      <div class="section-head">
+        <div class="section-kicker">Say this before a judge has to ask</div>
+        <h2>Honest precedent check</h2>
+        <p>Naming what already exists, unprompted, makes you look informed rather than derivative.</p>
+      </div>
+      <div class="callout note">
+        <span class="callout-label">What already exists</span>
+        Cell Broadcast systems (US Wireless Emergency Alerts, India's upcoming Cell Broadcast Alert System) already push pre-written templates by geography with no app or internet needed at delivery time. Trained ML models for AQI, cyclone tracks, and flood forecasting all exist in research and some commercial form — IMD, NASA, and various university groups have published work in each area individually. Bluetooth/offline mesh messaging for crisis use has prior art too (Bridgefy-style apps, student projects like UNIHACK 2026's "MeshMap").
+      </div>
+      <div class="callout solid">
+        <span class="callout-label">What's actually new here</span>
+        Nobody combines three independently trained disaster models with a personalized, app-based pre-staging mechanism, a visible deterministic trust layer, and a local peer relay fallback in one consumer system. The pre-staging-before-disconnection pattern — deciding in advance, arming silently, firing without needing a server round-trip — is the genuinely uncommon piece. Frame it as: "a software-only, smarter, personalized version of what Cell Broadcast does at the network level, built on real trained models instead of manual thresholds, with a trust layer and offline fallback it doesn't have."
+      </div>
+    </section>
+
+    <!-- ===== ML OVERVIEW ===== -->
+    <section id="ml-overview">
+      <div class="section-head">
+        <div class="section-kicker">The technical core</div>
+        <h2>Why three real, separately trained models</h2>
+        <p>This is the single biggest change from v1, and the part of this project most worth doing properly — for the pitch, and because it's genuinely your first real ML build.</p>
+      </div>
+
+      <div class="callout changed">
+        <span class="callout-label">Why not one unified model</span>
+        AQI, cyclones, and floods are driven by different physical processes on different timescales. AQI is a slow chemical accumulation problem driven by traffic, weather stagnation, and seasonal burning. Cyclones are a pressure-and-wind-pattern problem tracked over days at sea. Floods are a rainfall-and-river-discharge accumulation problem. Forcing one model to learn all three at once would mean diluting it with mismatched signals — three separate models, each trained on its own relevant historical data, is both more accurate and more honest.
+      </div>
+
+      <div class="callout learn">
+        <span class="callout-label">Why this is a good first ML project</span>
+        All three of these are <strong>tabular time-series prediction problems</strong> — given a table of recent numeric readings (AQI levels, rainfall, wind speed, pressure, and so on), predict a number or risk level some hours or days ahead. This is one of the most well-trodden, well-documented categories of machine learning there is. It doesn't require deep learning, large compute, or image/text data — gradient-boosted decision trees (XGBoost or LightGBM) handle this kind of data extremely well and are realistic to train, evaluate, and actually understand as a first model, with guidance the whole way.
+      </div>
+
+      <table class="model-table">
+        <thead><tr><th>Model</th><th>Predicts</th><th>Data richness</th><th>Realistic first-model difficulty</th></tr></thead>
+        <tbody>
+          <tr><td>AQI</td><td>Pollutant levels 24–72 hrs ahead, per city</td><td>Strong — dense, hourly, multi-year via CPCB/OpenAQ</td><td>Most approachable. Build this first.</td></tr>
+          <tr><td>Cyclone</td><td>Landfall risk &amp; intensity trend for a tracked storm</td><td>Strong — IMD best-track + IBTrACS, 1990–2017+, 6-hourly</td><td>Moderate. Fewer rows, but very clean and well-studied.</td></tr>
+          <tr><td>Flood</td><td>Flood risk level from rainfall/discharge patterns</td><td>Weaker — clean small datasets exist (e.g. regional rainfall-flood CSVs), but dense hourly river data is harder to access freely</td><td>Hardest to make precise. Expect this to be your coarsest model, and say so honestly in the pitch.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ===== ML PIPELINE EXPLAINER ===== -->
+    <section id="ml-pipeline">
+      <div class="section-head">
+        <div class="section-kicker">So you understand every step, not just trust it</div>
+        <h2>How a model actually gets built — the same pipeline, three times</h2>
+        <p>Every one of the three models below goes through this exact same sequence. Understanding this once means you understand all three.</p>
+      </div>
+
+      <div class="pipeline">
+        <div class="pipeline-step">1. Collect historical data</div><div class="pipeline-sep">→</div>
+        <div class="pipeline-step">2. Clean &amp; structure it</div><div class="pipeline-sep">→</div>
+        <div class="pipeline-step">3. Engineer features</div><div class="pipeline-sep">→</div>
+        <div class="pipeline-step">4. Split train/test by time</div><div class="pipeline-sep">→</div>
+        <div class="pipeline-step">5. Train the model</div><div class="pipeline-sep">→</div>
+        <div class="pipeline-step">6. Evaluate honestly</div><div class="pipeline-sep">→</div>
+        <div class="pipeline-step">7. Wire into the live pipeline</div>
+      </div>
+
+      <div class="stage-grid">
+        <div class="stage-card">
+          <h3 style="margin-bottom:14px;">Step by step, in plain terms</h3>
+          <ul class="feature-list">
+            <li><strong style="color:var(--text)">Collect:</strong> download the historical dataset for that disaster type (sources listed under each model below) — this is just files of past readings, nothing trained yet.<span class="f-sub">This step is mostly downloading and inspecting — getting a feel for what the raw data actually looks like.</span></li>
+            <li><strong style="color:var(--text)">Clean:</strong> fix missing values, mismatched units, duplicate rows, and obviously broken readings.<span class="f-sub">Real-world data is always messier than it looks at first — this step is unglamorous but determines whether anything downstream works.</span></li>
+            <li><strong style="color:var(--text)">Engineer features:</strong> turn raw readings into the inputs the model will actually learn from — e.g. not just "today's AQI" but "AQI 24 hours ago, rate of change over the last 3 days, wind speed, humidity, day of year."<span class="f-sub">This is the step that most determines model quality — good features matter more than a fancier model.</span></li>
+            <li><strong style="color:var(--text)">Split by time:</strong> train on older data, test on newer data the model has never seen — never split randomly for time-series data, or the model can accidentally "cheat" by learning from the future.<span class="f-sub">This is the single most important rule for doing this honestly — getting it wrong is the most common beginner mistake in time-series ML.</span></li>
+            <li><strong style="color:var(--text)">Train:</strong> the model (XGBoost/LightGBM) looks at the training data and learns the relationship between the input features and the real historical outcome.<span class="f-sub">This is usually the fastest step in wall-clock time — minutes, not hours, for datasets this size.</span></li>
+            <li><strong style="color:var(--text)">Evaluate honestly:</strong> run the trained model against the held-out test data it never saw, and measure how often it was actually right.<span class="f-sub">This produces the real precision/recall/false-positive numbers — see the evaluation section below.</span></li>
+            <li><strong style="color:var(--text)">Wire in:</strong> the trained model becomes a function the live Stage 1 pipeline calls with current conditions, returning a prediction and a confidence level.<span class="f-sub">From this point on, the rest of the system treats it the same way v1 treated the old rule-based threshold — just with a real model underneath now.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== MODEL 1: AQI ===== -->
+    <section id="ml-aqi">
+      <div class="section-head">
+        <div class="section-kicker">Model 1 of 3 — build this first</div>
+        <h2>AQI prediction model</h2>
+        <p>The most approachable of the three. Strong, dense, free historical data and a well-understood prediction task.</p>
+      </div>
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">1</div><h3>What it predicts</h3></div>
+            <div class="stage-tag-row"><span class="tag ml">Regression</span></div>
+          </div>
+          <p class="desc">Given recent AQI and weather readings for a city, predict the AQI level 24–72 hours ahead, plus a derived risk tier (good / moderate / poor / severe).</p>
+          <ul class="feature-list">
+            <li>Inputs: recent AQI history, wind speed/direction, humidity, temperature, time of year (captures seasonal burning patterns)<span class="f-sub">All freely available, hourly, for major Indian cities.</span></li>
+            <li>Output: predicted AQI value + tier, with a confidence range</li>
+          </ul>
+          <div class="stack-row">
+            <span class="stack-label">Data sources</span>
+            <span class="pill">CPCB historical archives</span>
+            <span class="pill">OpenAQ</span>
+            <span class="pill">AQICN / waqi.info</span>
+            <span class="pill">Open-Meteo (weather history)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== MODEL 2: CYCLONE ===== -->
+    <section id="ml-cyclone">
+      <div class="section-head">
+        <div class="section-kicker">Model 2 of 3</div>
+        <h2>Cyclone risk model</h2>
+        <p>Fewer rows than AQI data, but very clean, well-studied, and exactly the kind of structured tabular problem gradient-boosted trees handle well.</p>
+      </div>
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">2</div><h3>What it predicts</h3></div>
+            <div class="stage-tag-row"><span class="tag ml">Classification + regression</span></div>
+          </div>
+          <p class="desc">Given a forming or tracked storm system's current readings, predict landfall likelihood for coastal regions and intensity trend over the next 24–48 hours.</p>
+          <ul class="feature-list">
+            <li>Inputs: central pressure, wind speed, pressure drop, track position and direction, sea surface temperature, season<span class="f-sub">These are the same predictors used in published IMD-data research on this exact problem.</span></li>
+            <li>Output: landfall probability for nearby coastal zones + predicted intensity category</li>
+          </ul>
+          <div class="stack-row">
+            <span class="stack-label">Data sources</span>
+            <span class="pill">IMD RSMC New Delhi best-track data (1990–2017+)</span>
+            <span class="pill">IBTrACS (NOAA)</span>
+          </div>
+        </div>
+      </div>
+      <div class="callout note">
+        <span class="callout-label">Scope honestly</span>
+        Real operational cyclone track forecasting (predicting where a storm will physically move) is a much harder, research-grade problem. Scope this model to landfall risk and intensity trend for a storm whose current position is already known, not full track prediction — that's the honest, achievable version.
+      </div>
+    </section>
+
+    <!-- ===== MODEL 3: FLOOD ===== -->
+    <section id="ml-flood">
+      <div class="section-head">
+        <div class="section-kicker">Model 3 of 3 — build this last</div>
+        <h2>Flood risk model</h2>
+        <p>The weakest data situation of the three. Build this last, and be upfront in the pitch that it's coarser than the other two.</p>
+      </div>
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">3</div><h3>What it predicts</h3></div>
+            <div class="stage-tag-row"><span class="tag ml">Classification</span></div>
+          </div>
+          <p class="desc">Given recent rainfall accumulation and available river/regional data, predict a flood risk tier for a region over the coming days.</p>
+          <ul class="feature-list">
+            <li>Inputs: rainfall accumulation over recent days, regional historical flood-proneness, available river discharge/water level data where accessible<span class="f-sub">Expect to do more manual data cleaning here than for the other two models.</span></li>
+            <li>Output: flood risk tier (low / watch / warning / severe) for a region</li>
+          </ul>
+          <div class="stack-row">
+            <span class="stack-label">Data sources</span>
+            <span class="pill">Curated rainfall-flood datasets (e.g. regional Kaggle CSVs)</span>
+            <span class="pill">India-WRIS (manual curation needed)</span>
+            <span class="pill">IMD gridded rainfall data</span>
+          </div>
+        </div>
+      </div>
+      <div class="callout risk">
+        <span class="callout-label">Say this in the pitch, don't hide it</span>
+        Clean, dense, freely-licensed river discharge data for India is genuinely hard to get — government sources exist but often restrict bulk download or require manual curation. This model will likely run on rainfall-pattern data primarily, with river data added opportunistically. State this limitation directly: it reads as honesty about data constraints, not a weak model.
+      </div>
+    </section>
+
+    <!-- ===== LOCATION COVERAGE ===== -->
+    <section id="ml-coverage">
+      <div class="section-head">
+        <div class="section-kicker">Decision</div>
+        <h2>Location coverage strategy</h2>
+        <p>You wanted free-text "enter any location" input. Here's how that's honestly possible without faking accuracy somewhere nobody can see.</p>
+      </div>
+
+      <div class="callout changed">
+        <span class="callout-label">The constraint</span>
+        A trained model only knows what it saw in training. A model trained on Delhi/Mumbai-style metro data will not give honest, accurate predictions if silently pointed at a small town's live data it never learned from. Rather than fake universal coverage, the location search stays fully open — but what happens underneath is clearly tiered and disclosed.
+      </div>
+
+      <div class="city-grid">
+        <span class="city-chip">Delhi</span>
+        <span class="city-chip">Mumbai</span>
+        <span class="city-chip">Bangalore</span>
+        <span class="city-chip">Chennai</span>
+        <span class="city-chip">Kolkata</span>
+        <span class="city-chip">Hyderabad</span>
+        <span class="city-chip fallback">+ any other location → labeled fallback</span>
+      </div>
+
+      <table class="cap-table" style="margin-top:24px;">
+        <thead><tr><th>Location type</th><th>What the user sees</th></tr></thead>
+        <tbody>
+          <tr><td>Covered metro city</td><td><span class="cap-pill full">Full trained prediction</span> — real model output, real confidence, backed by the backtest numbers for that city.</td></tr>
+          <tr><td>Any other location, typed freely</td><td><span class="cap-pill partial">Labeled fallback</span> — live current data is still shown, plus either a clearly marked "general estimate, not yet trained for this location" or the nearest covered city's model used as a disclosed approximation.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout solid">
+        <span class="callout-label">Why this is a better pitch, not a weaker one</span>
+        "We trained real models for these cities, and we're upfront about exactly where real coverage ends" is a credibility point. It also creates a completely natural roadmap slide: "Phase 2 — expand trained coverage city by city as more historical data is curated," which reads as a genuine growth plan rather than a hidden limitation.
+      </div>
+    </section>
+
+    <!-- ===== EVALUATION ===== -->
+    <section id="ml-eval">
+      <div class="section-head">
+        <div class="section-kicker">The thing v1 was missing</div>
+        <h2>Backtest &amp; evaluation — proving it actually works</h2>
+        <p>Right now, nothing proves any of this is good at predicting. This section fixes that, and produces your strongest demo moment.</p>
+      </div>
+
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">E1</div><h3>Standard evaluation metrics</h3></div>
+            <div class="stage-tag-row"><span class="tag priority">Critical, previously missing</span></div>
+          </div>
+          <p class="desc">For each model, measured honestly against held-out historical data the model never trained on.</p>
+          <ul class="feature-list">
+            <li>Accuracy / error margin on the predicted value itself (how close was the predicted AQI to the real one)</li>
+            <li>Precision — when the model predicted a spike/disaster, how often was it actually right</li>
+            <li>Recall — of the real historical spikes/disasters, how many did the model successfully flag in advance</li>
+            <li>False positive rate — how often it cried wolf<span class="f-sub">This number matters enormously for a real alert system — too many false alarms destroys user trust, and judges who think about real deployment will ask about this.</span></li>
+          </ul>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">E2</div><h3>Historical replay demo</h3></div>
+            <div class="stage-tag-row"><span class="tag new">New in v2 — flagship demo moment</span></div>
+          </div>
+          <p class="desc">Instead of only a synthetic "simulate a disaster" button, let a judge replay a real, named historical event and watch the system correctly predict it before the actual event happened in history.</p>
+          <ul class="feature-list">
+            <li>Pick one well-documented real past event per model — e.g. a real Delhi/NCR severe smog episode for AQI, a real named cyclone (such as Amphan) for the cyclone model, a real flood event from the curated flood dataset<span class="f-sub">This is strictly more convincing than a synthetic demo, because it's checkable against real history, not a script you wrote yourself.</span></li>
+            <li>Replay feeds the model historical data exactly as it would have arrived in real time, and shows prediction confidence rising as the real event approached<span class="f-sub">Mirrors the same Monitoring → Armed → Fired sequence, but against real history instead of a simulation.</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout learn">
+        <span class="callout-label">Why this matters beyond the pitch</span>
+        This is also just good practice for learning ML properly — a model you can't honestly evaluate isn't one you can trust, regardless of how it's used. Building this evaluation habit now will serve you on every future ML project, not just this one.
+      </div>
+    </section>
+
+    <!-- ===== GLOSSARY ===== -->
+    <section id="ml-glossary">
+      <div class="section-head">
+        <div class="section-kicker">Reference</div>
+        <h2>ML terms used above, plainly explained</h2>
+        <p>Since this is your first model — quick definitions for anything above that might be unfamiliar, in plain language.</p>
+      </div>
+
+      <div class="glossary-item">
+        <div class="glossary-term">XGBoost / LightGBM</div>
+        <div class="glossary-def">Two popular, well-tested libraries that build "gradient-boosted decision trees" — essentially, lots of small decision rules combined together, each one correcting the mistakes of the ones before it. They're a strong default choice for tabular data like weather readings, fast to train, and produce results that can be inspected and explained.</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Features</div>
+        <div class="glossary-def">The individual pieces of input information given to the model — e.g. "yesterday's AQI" or "wind speed" are each one feature. Choosing good features matters more to the result than almost anything else in the process.</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Train / test split</div>
+        <div class="glossary-def">The historical data gets divided into two parts: one the model learns from (train), and one it never sees until evaluation time (test), so you can honestly check whether it actually learned something general, rather than just memorizing the data.</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Precision vs recall</div>
+        <div class="glossary-def">Precision asks "when the model raised an alarm, how often was it right?" Recall asks "of all the real disasters that happened, how many did the model catch?" A model can be excellent at one and poor at the other — both numbers matter, especially together.</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Overfitting</div>
+        <div class="glossary-def">When a model essentially memorizes the exact training data instead of learning a general pattern — it looks great on data it's already seen and performs poorly on anything new. The train/test split is the main defense against this.</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Backtest</div>
+        <div class="glossary-def">Running the trained model against real past data to see what it would have predicted at the time, then checking that against what actually happened — this is where the historical replay demo comes from.</div>
+      </div>
+    </section>
+
+    <!-- ===== STAGE 0 ===== -->
+    <section id="stage-0">
+      <div class="section-head">
+        <div class="section-kicker">System — Stage 0</div>
+        <h2>Data ingestion</h2>
+        <p>The foundation both the live dashboard and all three trained models depend on.</p>
+      </div>
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">0</div><h3>Live regional data feed</h3></div>
+            <div class="stage-tag-row"><span class="tag priority">Foundation</span></div>
+          </div>
+          <p class="desc">Pull real, live weather and air-quality data on a recurring schedule for covered cities, and keep a rolling history — this feeds both the live dashboard and the running input to each trained model.</p>
+          <ul class="feature-list">
+            <li>Scheduled polling job (every few minutes) pulling current conditions, not just a single fetch on page load</li>
+            <li>Store readings in a simple time-series table keyed by region and timestamp</li>
+            <li>Normalize units and categories on the way in, matching the same feature format each trained model expects</li>
+          </ul>
+          <div class="stack-row">
+            <span class="stack-label">Data sources</span>
+            <span class="pill">OpenAQ</span><span class="pill">OpenWeatherMap</span><span class="pill">AQICN / waqi.info</span><span class="pill">Open-Meteo</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STAGE 1 ===== -->
+    <section id="stage-1">
+      <div class="section-head">
+        <div class="section-kicker">System — Stage 1</div>
+        <h2>Predictive pre-staging engine</h2>
+        <p>The headline mechanism. Now driven by the three trained models above instead of hand-written thresholds.</p>
+      </div>
+
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">1</div><h3>Model-driven risk detection</h3></div>
+            <div class="stage-tag-row"><span class="tag priority">Headline feature</span><span class="tag changed">Changed</span></div>
+          </div>
+          <p class="desc">Live data flows into the relevant trained model (AQI, cyclone, or flood) for a given covered region, producing a prediction and confidence score on a rolling basis.</p>
+          <ul class="feature-list">
+            <li>Each trained model runs against current live data continuously, not just on-demand<span class="f-sub">This replaces v1's manual rate-of-change rules entirely.</span></li>
+            <li>A confidence/risk score is attached to every prediction<span class="f-sub">Now genuinely model-derived, not a hand-set threshold — this is what makes the "AI predicts" claim accurate rather than aspirational.</span></li>
+            <li>Threshold crossing triggers the next step automatically</li>
+          </ul>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">1b</div><h3>Alert package generation</h3></div>
+            <div class="stage-tag-row"><span class="tag core">Core</span></div>
+          </div>
+          <p class="desc">Once a model crosses threshold, generate the alert content — severity tier, plain-language explanation, recommended action — via a fast LLM call.</p>
+          <ul class="feature-list">
+            <li>Tiered severity attached to every generated package</li>
+            <li>Plain-language text generated per-incident, referencing the actual model output (e.g. "predicted AQI of 340 in the next 18 hours, driven by stagnant wind conditions")<span class="f-sub">Grounding the LLM's text in the real model number, not letting it invent the justification.</span></li>
+            <li>Recommended action included in the same package</li>
+            <li>Use a fast model (e.g. a Haiku-class model) with streaming output for any live demo calls<span class="f-sub">Keeps demo pacing tight — text should visibly appear immediately, not sit in silence for several seconds.</span></li>
+          </ul>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">1c</div><h3>Silent pre-staging on device</h3></div>
+            <div class="stage-tag-row"><span class="tag priority">The actual trick</span></div>
+          </div>
+          <p class="desc">Push the generated alert package to the user's device while connectivity is still available, and store it locally — staged and waiting.</p>
+          <ul class="feature-list">
+            <li>Package stored in browser local storage / IndexedDB on the device</li>
+            <li>Local trigger condition attached: a time window, a local condition check, or "if no further server update arrives by time X, surface anyway"</li>
+            <li>Visible "armed" state shown in the app UI the moment staging completes</li>
+          </ul>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">1d</div><h3>Local fire, independent of network</h3></div>
+            <div class="stage-tag-row"><span class="tag priority">The payoff</span></div>
+          </div>
+          <p class="desc">When the trigger condition is met, the device surfaces the already-staged alert using logic that runs entirely on-device.</p>
+          <ul class="feature-list">
+            <li>Service worker checks staged packages against trigger conditions on a timer</li>
+            <li>Local notification fires using already-known content — no fetch call required to decide</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STAGE 2 ===== -->
+    <section id="stage-2">
+      <div class="section-head">
+        <div class="section-kicker">System — Stage 2</div>
+        <h2>Trust &amp; verification engine</h2>
+        <p>Re-split from v1: a deterministic algorithm now decides the actual confidence number, and the LLM's job is narrowed to explaining it.</p>
+      </div>
+
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">2</div><h3>Citizen hazard reporting</h3></div>
+            <div class="stage-tag-row"><span class="tag core">Core</span></div>
+          </div>
+          <p class="desc">A simple, fast form anyone can use to report something happening right now near them.</p>
+          <ul class="feature-list">
+            <li>Hazard type, location, short description, optional photo</li>
+          </ul>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">2b</div><h3>Deterministic confidence scoring</h3></div>
+            <div class="stage-tag-row"><span class="tag changed">Changed — algorithm, not LLM</span></div>
+          </div>
+          <p class="desc">A plain rules-and-math algorithm computes the confidence score — no LLM involved in deciding the number itself.</p>
+          <ul class="feature-list">
+            <li>Cross-reference report location/time against Stage 0's live data feed (e.g. does live rainfall data support a flooding report)</li>
+            <li>Cross-reference against other nearby reports in a recent time window — count and proximity computed directly</li>
+            <li>Factor in reporter history if available<span class="f-sub">All of this is ordinary computation — distance, time windows, counts — nothing here needs an LLM, and that's the point: a deterministic number can't hallucinate or vary between runs.</span></li>
+          </ul>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">2c</div><h3>LLM explains, doesn't decide</h3></div>
+            <div class="stage-tag-row"><span class="tag core">Core</span></div>
+          </div>
+          <p class="desc">Once the algorithm has produced a confidence number, an LLM call narrates why — turning the computed factors into a readable reasoning trace.</p>
+          <ul class="feature-list">
+            <li>"3 reports within 10 minutes + live rainfall data confirms active precipitation = 92% confidence, escalating" — written out, not hidden<span class="f-sub">This is still the best demo moment in the whole product: judges watch reasoning narrated over a real number, not a number a language model invented on the spot.</span></li>
+            <li>Verified high-confidence reports feed into the same pre-staging pipeline as Stage 1<span class="f-sub">Same delivery mechanism, different trigger source.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STAGE 3 ===== -->
+    <section id="stage-3">
+      <div class="section-head">
+        <div class="section-kicker">System — Stage 3</div>
+        <h2>Offline relay (mesh fallback)</h2>
+        <p>Kept, by your call, as a real feature worth building. Sequenced last since it's the most technically uncertain piece.</p>
+      </div>
+
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">3</div><h3>Peer-to-peer relay, small scale</h3></div>
+            <div class="stage-tag-row"><span class="tag core">Core, scoped narrow</span></div>
+          </div>
+          <p class="desc">A real, working, narrow proof-of-concept of phone-to-phone (or tab-to-tab) message relay — not a claim of citywide mesh coverage.</p>
+          <ul class="feature-list">
+            <li>WebRTC or Web Bluetooth connection between two to three pre-paired devices<span class="f-sub">Best demoed on Android Chrome, where Web Bluetooth actually works.</span></li>
+            <li>A verified alert relays from a connected device to a disconnected one nearby</li>
+            <li>Explicitly framed in the pitch as a scalable proof-of-concept, not production-scale mesh</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout note">
+        <span class="callout-label">Risk reframed for your actual format</span>
+        Crowded-venue radio interference is a known risk for in-person hackathon demos, but since you're competing in virtual hackathons, you control your own demo environment fully — this risk doesn't really apply to you. The remaining real limitation is platform support: Web Bluetooth works in Chrome on Android, not in Safari on iOS, and isn't designed for always-on background relay at scale. State that plainly; it doesn't need a fallback recording given your format.
+      </div>
+    </section>
+
+    <!-- ===== STAGE 4 ===== -->
+    <section id="stage-4">
+      <div class="section-head">
+        <div class="section-kicker">System — Stage 4</div>
+        <h2>Incident log ("black box")</h2>
+        <p>Kept deliberately simple — a natural byproduct of Stages 1–3, not a separate build.</p>
+      </div>
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">4</div><h3>Timestamped event log</h3></div>
+            <div class="stage-tag-row"><span class="tag simple">Simple — free byproduct</span></div>
+          </div>
+          <p class="desc">Every prediction, pre-staged alert, citizen report, verification decision, and fired alert already gets written down somewhere as part of Stages 1–3 working correctly. This stage is just a read-only view over that same data.</p>
+          <ul class="feature-list">
+            <li>A public, browsable timeline: what did the system know, and when, during a given incident<span class="f-sub">Also doubles as the place to show the backtest/historical replay results per model.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STAGE 5 ===== -->
+    <section id="stage-5">
+      <div class="section-head">
+        <div class="section-kicker">System — Stage 5</div>
+        <h2>Public-facing website</h2>
+        <p>What judges actually click on. Needs to make the whole pipeline's causality visible in under a couple of minutes, without anyone needing to install anything.</p>
+      </div>
+
+      <div class="stage-grid">
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">5</div><h3>Live dashboard</h3></div>
+            <div class="stage-tag-row"><span class="tag core">Core</span></div>
+          </div>
+          <ul class="feature-list">
+            <li>Currently monitored regions, live data feed, active "armed" alerts, recent verified citizen reports, and the per-model confidence/risk readout</li>
+            <li>Free-text location search with the tiered coverage behavior described above</li>
+          </ul>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">5b</div><h3>"Simulate a disaster" control</h3></div>
+            <div class="stage-tag-row"><span class="tag priority">Important UI element</span></div>
+          </div>
+          <p class="desc">A synthetic trigger judges can click for a quick, controlled run-through of the full pipeline.</p>
+          <ul class="feature-list">
+            <li>One click triggers: model flags risk → alert package generated → pre-staged and armed → simulated network loss → fired locally → relayed to a second simulated device</li>
+          </ul>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">5c</div><h3>Historical replay control</h3></div>
+            <div class="stage-tag-row"><span class="tag new">New in v2 — likely the stronger demo</span></div>
+          </div>
+          <p class="desc">A second control letting judges replay a real, named historical disaster and watch the trained model correctly flag it in advance.</p>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-card-top">
+            <div class="stage-title-group"><div class="stage-num">5d</div><h3>Public incident timeline &amp; model report card</h3></div>
+            <div class="stage-tag-row"><span class="tag simple">Simple</span></div>
+          </div>
+          <p class="desc">The browsable view over Stage 4's log, plus a simple per-model page showing the backtest accuracy/precision/recall numbers honestly.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== EXTRAS ===== -->
+    <section id="extras">
+      <div class="section-head">
+        <div class="section-kicker">Keep these thin</div>
+        <h2>Small extras</h2>
+        <p>Cheap additions layered on the existing pipeline — not separate builds.</p>
+      </div>
+      <ul class="feature-list" style="max-width:760px;">
+        <li>Severity-coded notification styling — color and icon per hazard type and tier</li>
+        <li>Multi-language alert text — the LLM call in Stage 1b can output multiple languages nearly for free<span class="f-sub">Strong, low-cost "Impact" scoring point for an India-specific pitch.</span></li>
+        <li>Simple per-region trust score, computed from report history<span class="f-sub">Reinforces the trust narrative without a new subsystem.</span></li>
+        <li>An explicit "Phase 2 roadmap" slide covering accessibility (haptic alerts, high-contrast mode, simplified text-to-speech) and expanded city coverage<span class="f-sub">Costs a sentence in the deck, signals product maturity.</span></li>
+      </ul>
+    </section>
+
+    <!-- ===== CUT ===== -->
+    <section id="cut">
+      <div class="section-head">
+        <div class="section-kicker">Said no on purpose</div>
+        <h2>Explicitly cut from this build</h2>
+        <p>Naming what you're deliberately not building keeps this from becoming feature-bloated.</p>
+      </div>
+      <ul class="feature-list" style="max-width:760px;">
+        <li><span class="tag cut" style="margin-right:8px;">Cut</span>Full operational cyclone track forecasting (predicting a storm's physical path)<span class="f-sub">Research-grade difficulty — scoped down to landfall risk/intensity trend for an already-tracked storm instead.</span></li>
+        <li><span class="tag cut" style="margin-right:8px;">Cut</span>Full sign-language avatar generation<span class="f-sub">High cost, uncertain quality, doesn't move the core pitch.</span></li>
+        <li><span class="tag cut" style="margin-right:8px;">Cut</span>True citywide Bluetooth mesh at production scale<span class="f-sub">Can't be demoed at this scale — the 2–3 device proof tells the same story.</span></li>
+        <li><span class="tag cut" style="margin-right:8px;">Cut</span>A general-purpose "ask anything about air quality" chatbot layer<span class="f-sub">Already occupied by existing research tools (VayuBuddy / VayuChat) — would dilute focus on Setu's actual differentiator.</span></li>
+        <li><span class="tag cut" style="margin-right:8px;">Cut</span>Unified single model across all three disaster types<span class="f-sub">Considered and explicitly rejected — see the ML overview section above.</span></li>
+      </ul>
+    </section>
+
+    <!-- ===== PLATFORM ===== -->
+    <section id="platform">
+      <div class="section-head">
+        <div class="section-kicker">Decision</div>
+        <h2>PWA, not a from-scratch native app</h2>
+        <p>One codebase, one URL. Installable to a home screen for the "real" demo, fully clickable in any browser for judges who'd rather not install anything.</p>
+      </div>
+
+      <table class="cap-table">
+        <thead><tr><th>Capability</th><th>PWA (this build)</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Live dashboard, model predictions, trust engine, reporting, incident log</td><td><span class="cap-pill full">Full support</span></td><td>No compromise — entirely web-native.</td></tr>
+          <tr><td>Pre-stage + local fire, app recently opened</td><td><span class="cap-pill full">Full support</span></td><td>Reliable for a live, attended demo on any device.</td></tr>
+          <tr><td>Pre-stage + local fire, app closed for a long time, especially on iPhone</td><td><span class="cap-pill partial">Partial</span></td><td>iOS Safari can suspend a PWA's background service worker over time. State this limitation directly in the pitch.</td></tr>
+          <tr><td>True background Bluetooth mesh relay, any phone, unattended</td><td><span class="cap-pill no">Not reliable</span></td><td>Web Bluetooth is Chrome/Android-only. Demo as a narrow, attended, 2–3 device proof-of-concept.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout note" style="margin-top:24px;">
+        <span class="callout-label">What to say in the pitch deck</span>
+        "Current build is a PWA proof-of-concept demonstrating the full mechanism end-to-end, on top of real trained models. A production version would move to a native app for OS-level guarantees: scheduled local notifications that survive any amount of idle time, and true background Bluetooth mesh relay across all devices."
+      </div>
+    </section>
+
+    <!-- ===== DEMO SCRIPT ===== -->
+    <section id="demo">
+      <div class="section-head">
+        <div class="section-kicker">For judging day</div>
+        <h2>The demo script</h2>
+        <p>What actually happens, in order, when a judge sits down with this — now including the historical replay, which is likely your strongest single moment.</p>
+      </div>
+
+      <div class="phase-row"><div class="phase-when">0:00</div><div class="phase-body"><h4>Resting state</h4><p>Open the live dashboard. Show real, currently-live data for a covered metro city. State is "🟢 Monitoring."</p></div></div>
+      <div class="phase-row"><div class="phase-when">0:15</div><div class="phase-body"><h4>Replay a real historical event</h4><p>Click historical replay — pick a real, named past event. Watch the trained model's confidence rise in real time as the replayed data approaches the actual historical event. This is checkable against reality, not a script.</p></div></div>
+      <div class="phase-row"><div class="phase-when">0:40</div><div class="phase-body"><h4>Show the backtest numbers</h4><p>Pull up the per-model report card — real precision/recall/false-positive numbers from held-out historical data. This is the answer to "how do you know this works?"</p></div></div>
+      <div class="phase-row"><div class="phase-when">0:55</div><div class="phase-body"><h4>Click "Simulate a disaster" for the live pipeline</h4><p>Alert package generates visibly — plain-language text and severity tier appear via fast, streamed LLM output, grounded in the model's actual predicted number.</p></div></div>
+      <div class="phase-row"><div class="phase-when">1:10</div><div class="phase-body"><h4>Watch it arm, then fire offline</h4><p>State changes to "🟡 Armed." Toggle simulated network loss in-app. The staged alert fires anyway — "🔴 Fired locally," no server call needed.</p></div></div>
+      <div class="phase-row"><div class="phase-when">1:25</div><div class="phase-body"><h4>Relay to a second device</h4><p>A second, pre-paired device with no connection and nothing staged receives the same alert via the peer relay.</p></div></div>
+      <div class="phase-row"><div class="phase-when">1:40</div><div class="phase-body"><h4>Show the trust layer</h4><p>Submit a citizen report live. Show the deterministic confidence score compute, then the LLM narrate why — algorithm decides, LLM explains.</p></div></div>
+      <div class="phase-row"><div class="phase-when">1:55</div><div class="phase-body"><h4>Close on the incident log</h4><p>Show the timeline view — everything that just happened, timestamped, browsable.</p></div></div>
+    </section>
+
+    <!-- ===== TIMELINE ===== -->
+    <section id="timeline">
+      <div class="section-head">
+        <div class="section-kicker">Sequencing</div>
+        <h2>Build order &amp; timeline</h2>
+        <p>This is now honestly a multi-week-to-months project, not a two-week sprint — reframed deliberately, per your call to take the time needed.</p>
+      </div>
+
+      <div class="phase-row"><div class="phase-when">Now → Deck</div><div class="phase-body"><h4>Round 1: pitch only, code optional</h4><p>Round 1 only requires the presentation. Priority is making this document's content land clearly in slide form, including the ML methodology and evaluation approach — judges scoring "Technical Implementation" will respond well to seeing a real evaluation plan even before models are fully trained. If time allows, a thin working slice of Stage 0 (real live data feed) makes for a strong embedded screenshot or clip.</p></div></div>
+      <div class="phase-row"><div class="phase-when">If shortlisted — Phase A</div><div class="phase-body"><h4>Data &amp; first model</h4><p>Stage 0 data ingestion, fully real. Then the AQI model end-to-end: collect, clean, engineer features, train, evaluate. This is the best place to actually learn the ML pipeline once, since AQI has the richest, most forgiving data.</p></div></div>
+      <div class="phase-row"><div class="phase-when">Phase B</div><div class="phase-body"><h4>Wire the first model into the live system</h4><p>Stage 1's pre-staging engine, end-to-end, including the local fire mechanism, driven by the real AQI model. This is the one piece that must work flawlessly — build and test it relentlessly before adding the other two models.</p></div></div>
+      <div class="phase-row"><div class="phase-when">Phase C</div><div class="phase-body"><h4>Cyclone and flood models</h4><p>Repeat the same pipeline for cyclone, then flood (the harder data situation, build it last). Add each model's evaluation numbers and historical replay event as it's finished.</p></div></div>
+      <div class="phase-row"><div class="phase-when">Phase D</div><div class="phase-body"><h4>Dashboard, trust engine, incident log</h4><p>Stage 5's dashboard with both simulate and historical-replay controls, wired to the real models. Stage 2's split trust/verification engine. Stage 4's incident log as a read view.</p></div></div>
+      <div class="phase-row"><div class="phase-when">Phase E — last</div><div class="phase-body"><h4>Offline relay</h4><p>Stage 3's narrow mesh proof-of-concept, last — the rest of the product stands fine without it if time runs short anywhere earlier.</p></div></div>
+      <div class="phase-row"><div class="phase-when">Ongoing</div><div class="phase-body"><h4>Past the hackathon</h4><p>This generalizes past SmartAIthon — civic-tech, disaster-response, trust-and-safety, and ML-for-good hackathons are all reasonable homes for the same core build. Worth maintaining as a long-term portfolio piece.</p></div></div>
+    </section>
+
+    <!-- ===== JUDGING MAPPING ===== -->
+    <section id="judging">
+      <div class="section-head">
+        <div class="section-kicker">Scoring</div>
+        <h2>Judging criteria mapping</h2>
+        <p>How this build is meant to score against SmartAIthon's stated weights.</p>
+      </div>
+
+      <div class="crit-grid">
+        <div class="crit-card"><div class="crit-pct">25%</div><div class="crit-name">Innovation</div><div class="crit-how">Pre-staging-before-disconnection, on top of real trained models rather than a static template, with a transparent trust layer.</div></div>
+        <div class="crit-card"><div class="crit-pct">25%</div><div class="crit-name">Technical implementation</div><div class="crit-how">Three real trained models with honest backtest numbers, a deterministic-then-explained trust layer, and a working local-fire + relay mechanism — substantive, verifiable technical depth.</div></div>
+        <div class="crit-card"><div class="crit-pct">20%</div><div class="crit-name">Impact</div><div class="crit-how">Addresses a real failure mode of existing alert systems, backed by real evaluation numbers rather than an unverified claim.</div></div>
+        <div class="crit-card"><div class="crit-pct">15%</div><div class="crit-name">Feasibility</div><div class="crit-how">Built on free public datasets and APIs, a PWA, and well-understood ML tooling — no hardware, no paid infrastructure.</div></div>
+        <div class="crit-card"><div class="crit-pct">15%</div><div class="crit-name">Presentation</div><div class="crit-how">The state-machine sequence plus a real historical replay is a repeatable, checkable demo narrative.</div></div>
+      </div>
+    </section>
+
+    <!-- ===== RISK REGISTER ===== -->
+    <section id="risks">
+      <div class="section-head">
+        <div class="section-kicker">Stay honest</div>
+        <h2>Risk register</h2>
+        <p>Named clearly, including what changed from v1's reviews.</p>
+      </div>
+
+      <div class="callout risk">
+        <span class="callout-label">Scope is now genuinely large</span>
+        Three trained models is real, multi-week-plus work, not a hackathon-weekend task — accepted deliberately, per your call. The mitigation is sequencing: AQI first (richest data, best for learning the pipeline once), cyclone second, flood last. If time runs short, two well-evaluated models beat three rushed ones.
+      </div>
+      <div class="callout risk">
+        <span class="callout-label">Flood data quality</span>
+        Genuinely the weakest data situation of the three. Budget more manual cleaning time here, and state the limitation honestly in the pitch rather than overclaiming precision.
+      </div>
+      <div class="callout risk">
+        <span class="callout-label">iOS reliability</span>
+        Don't demo the "long idle, no recent app open" scenario live on an iPhone. Demo on Android Chrome, or the freshly-opened-app path, both solid.
+      </div>
+      <div class="callout solid">
+        <span class="callout-label">What's not at risk</span>
+        Stages 0, 2c (the trust narration), 4, and 5's resting-state dashboard are all standard, well-understood build work. The deterministic Stage 2b scoring removes the LLM-hallucination risk ChatGPT flagged. Virtual-only hackathons remove the RF-interference risk for Stage 3.
+      </div>
+    </section>
+
+    <footer>
+      SETU — BUILD PLAN — V2 — REVISED AFTER EXTERNAL REVIEW — SOLO / VIBE-CODED
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

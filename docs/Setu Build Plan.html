@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setu — Step-by-Step Build Blueprint</title>
+<style>
+  :root{
+    --bg: #11161C; --bg-raised: #161D26; --bg-card: #1A222C;
+    --line: #283140; --line-soft: #1F2733;
+    --text: #EDEFF2; --text-dim: #8A93A3; --text-faint: #5C6675;
+    --amber: #F5A623; --amber-dim: #6B5526;
+    --red: #E5484D; --red-dim: #5C2629;
+    --green: #3DD68C; --green-dim: #1E4A38;
+    --blue: #4FA3F7; --blue-dim: #1E3A5C;
+    --purple: #B58CF0; --purple-dim: #3A2E5C;
+    --mono: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html{ scroll-behavior: smooth; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 16px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+  body::before{ content:''; position: fixed; inset:0; background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px); background-size: 48px 48px; pointer-events:none; z-index:0; }
+  a{ color: var(--blue); text-decoration: none; } a:hover{ text-decoration: underline; }
+  ::selection{ background: var(--amber-dim); color: var(--text); }
+  :focus-visible{ outline: 2px solid var(--amber); outline-offset: 2px; }
+
+  .shell{ display: grid; grid-template-columns: 300px 1fr; max-width: 1480px; margin: 0 auto; position: relative; z-index: 1; }
+  @media (max-width: 900px){ .shell{ grid-template-columns: 1fr; } }
+
+  .nav{ position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 32px 20px; border-right: 1px solid var(--line); scrollbar-width: thin; }
+  @media (max-width: 900px){ .nav{ position: static; height: auto; border-right:none; border-bottom: 1px solid var(--line); padding: 24px 24px 16px; } }
+
+  .nav-brand{ display:flex; align-items:center; gap:10px; margin-bottom: 20px; }
+  .nav-brand-mark{ width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, var(--amber), var(--red)); flex-shrink:0; position: relative; }
+  .nav-brand-mark::after{ content:''; position:absolute; inset: 6px; background: var(--bg); border-radius: 2px; }
+  .nav-brand-text{ font-family: var(--mono); font-size: 15px; font-weight: 700; letter-spacing: 0.02em; }
+  .nav-brand-sub{ font-family: var(--mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .nav-progress{ background: var(--bg-card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-family: var(--mono); font-size: 10.5px; color: var(--text-dim); line-height:1.7; }
+  .nav-progress strong{ color: var(--amber); display:block; margin-bottom:4px; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; }
+
+  .nav-section{ margin-bottom: 16px; }
+  .nav-section-label{ font-family: var(--mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-left: 10px; }
+  .nav-link{ display:flex; align-items:center; gap:8px; font-size: 13px; color: var(--text-dim); padding: 5px 10px; border-radius: 6px; transition: all 0.15s ease; }
+  .nav-link:hover{ color: var(--text); background: var(--bg-raised); text-decoration:none; }
+  .nav-link .phase-dot{ width:6px; height:6px; border-radius:50%; background: var(--text-faint); flex-shrink:0; }
+
+  .main{ padding: 0 0 120px; min-width: 0; }
+  .hero{ padding: 56px 56px 40px; border-bottom: 1px solid var(--line); }
+  @media (max-width: 900px){ .hero{ padding: 36px 24px 28px; } }
+  .hero-eyebrow{ font-family: var(--mono); font-size: 12px; color: var(--amber); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 16px; }
+  .hero h1{ font-size: 38px; line-height: 1.15; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 16px; }
+  @media (max-width: 600px){ .hero h1{ font-size: 27px; } }
+  .hero-sub{ font-size: 16.5px; color: var(--text-dim); max-width: 700px; }
+
+  .how-to-use{ display:grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-top:28px; }
+  .htu-card{ background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .htu-num{ font-family: var(--mono); color: var(--amber); font-size: 12px; margin-bottom: 6px; }
+  .htu-card p{ font-size: 13.5px; color: var(--text-dim); }
+
+  section{ padding: 48px 56px; border-bottom: 1px solid var(--line); }
+  @media (max-width: 900px){ section{ padding: 32px 24px; } }
+  .section-head{ margin-bottom: 28px; max-width: 780px; }
+  .section-kicker{ font-family: var(--mono); font-size: 11.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .section-head h2{ font-size: 26px; font-weight: 750; letter-spacing: -0.01em; margin-bottom: 12px; }
+  .section-head p{ color: var(--text-dim); font-size: 15px; max-width: 700px; }
+
+  /* file tree */
+  .tree{ font-family: var(--mono); font-size: 13px; background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px; padding: 22px 26px; line-height: 1.9; overflow-x:auto; white-space:pre; color: var(--text-dim); }
+  .tree .folder{ color: var(--amber); }
+  .tree .file{ color: var(--text); }
+  .tree .comment{ color: var(--text-faint); }
+  .tree .new{ color: var(--green); }
+
+  /* phase header banner */
+  .phase-banner{ display:flex; align-items:center; gap:16px; margin-bottom: 8px; }
+  .phase-badge{ font-family: var(--mono); font-size: 13px; font-weight:700; color: var(--bg); background: var(--amber); padding: 5px 12px; border-radius: 7px; flex-shrink:0; }
+  .phase-banner h2{ font-size: 26px; }
+  .phase-meta-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+
+  .tag{ font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 9px; border-radius: 100px; border: 1px solid var(--line); color: var(--text-dim); white-space: nowrap; }
+  .tag.priority{ border-color: var(--red-dim); color: var(--red); background: rgba(229,72,77,0.08); }
+  .tag.core{ border-color: var(--amber-dim); color: var(--amber); background: rgba(245,166,35,0.08); }
+  .tag.simple{ border-color: var(--green-dim); color: var(--green); background: rgba(61,214,140,0.08); }
+  .tag.ml{ border-color: var(--blue-dim); color: var(--blue); background: rgba(79,163,247,0.08); }
+  .tag.frontend{ border-color: var(--purple-dim); color: var(--purple); background: rgba(181,140,240,0.1); }
+  .tag.backend{ border-color: var(--blue-dim); color: var(--blue); background: rgba(79,163,247,0.08); }
+
+  /* step cards */
+  .step-list{ display:flex; flex-direction:column; gap: 16px; margin-top: 24px; }
+  .step-card{ background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 26px; }
+  .step-top{ display:flex; align-items:flex-start; gap: 14px; margin-bottom: 12px; }
+  .step-num{ font-family: var(--mono); font-size: 12px; color: var(--bg); background: var(--text-dim); width: 28px; height: 28px; border-radius: 8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .step-top h4{ font-size: 16.5px; font-weight:700; flex:1; }
+  .step-card p.step-desc{ color: var(--text-dim); font-size: 14.5px; margin-bottom: 14px; max-width: 720px; }
+
+  .step-detail-list{ list-style:none; margin-bottom: 14px; }
+  .step-detail-list li{ font-size: 14px; color: var(--text); padding: 7px 0; display:flex; gap: 9px; align-items:flex-start; }
+  .step-detail-list li::before{ content:'›'; color: var(--text-faint); font-family: var(--mono); flex-shrink:0; }
+
+  .files-touched{ margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+  .files-touched .ft-label{ font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+  .file-pill{ font-family: var(--mono); font-size: 11.5px; padding: 4px 10px; border-radius: 6px; background: var(--bg-raised); border: 1px solid var(--line); color: var(--blue); display:inline-block; margin: 3px 4px 3px 0; }
+
+  .done-box{ margin-top: 16px; background: rgba(61,214,140,0.06); border: 1px solid var(--green-dim); border-radius: 10px; padding: 14px 18px; }
+  .done-box .db-label{ font-family: var(--mono); font-size: 10.5px; color: var(--green); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+  .done-box ul{ list-style:none; }
+  .done-box li{ font-size: 13.5px; color: var(--text-dim); padding: 4px 0; display:flex; gap:8px; align-items:flex-start; }
+  .done-box li::before{ content:'☐'; color: var(--green); font-family: var(--mono); flex-shrink:0; }
+
+  .callout{ border-radius: 10px; padding: 16px 18px; margin: 18px 0; border: 1px solid var(--line); background: var(--bg-card); font-size: 14px; color: var(--text-dim); }
+  .callout-label{ font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display:block; }
+  .callout.risk{ border-color: var(--red-dim); } .callout.risk .callout-label{ color: var(--red); }
+  .callout.solid{ border-color: var(--green-dim); } .callout.solid .callout-label{ color: var(--green); }
+  .callout.note{ border-color: var(--amber-dim); } .callout.note .callout-label{ color: var(--amber); }
+  .callout.learn{ border-color: var(--blue-dim); } .callout.learn .callout-label{ color: var(--blue); }
+
+  code{ font-family: var(--mono); background: var(--bg-raised); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; color: var(--blue); }
+
+  footer{ padding: 40px 56px; font-family: var(--mono); font-size: 12px; color: var(--text-faint); }
+  @media (max-width: 900px){ footer{ padding: 32px 24px; } }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ===== NAV ===== -->
+  <nav class="nav" aria-label="Blueprint phases">
+    <div class="nav-brand">
+      <div class="nav-brand-mark" aria-hidden="true"></div>
+      <div><div class="nav-brand-text">SETU</div><div class="nav-brand-sub">Build Blueprint</div></div>
+    </div>
+
+    <div class="nav-progress">
+      <strong>11 phases</strong>
+      0 Setup → A Foundation → B Data → C AQI Model → D Pre-staging → E Cyclone → F Flood → G Trust → H Log → I Dashboard → J Relay → K Ship
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Start here</div>
+      <a class="nav-link" href="#how-to-use"><span class="phase-dot"></span>How to use this doc</a>
+      <a class="nav-link" href="#file-structure"><span class="phase-dot"></span>Full file &amp; folder structure</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Phases</div>
+      <a class="nav-link" href="#phase-0"><span class="phase-dot"></span>0 — Accounts &amp; setup</a>
+      <a class="nav-link" href="#phase-a"><span class="phase-dot"></span>A — Foundation skeleton</a>
+      <a class="nav-link" href="#phase-b"><span class="phase-dot"></span>B — Live data ingestion</a>
+      <a class="nav-link" href="#phase-c"><span class="phase-dot"></span>C — AQI model</a>
+      <a class="nav-link" href="#phase-d"><span class="phase-dot"></span>D — Pre-staging &amp; local fire</a>
+      <a class="nav-link" href="#phase-e"><span class="phase-dot"></span>E — Cyclone model</a>
+      <a class="nav-link" href="#phase-f"><span class="phase-dot"></span>F — Flood model</a>
+      <a class="nav-link" href="#phase-g"><span class="phase-dot"></span>G — Trust &amp; verification</a>
+      <a class="nav-link" href="#phase-h"><span class="phase-dot"></span>H — Incident log</a>
+      <a class="nav-link" href="#phase-i"><span class="phase-dot"></span>I — Dashboard polish</a>
+      <a class="nav-link" href="#phase-j"><span class="phase-dot"></span>J — Offline relay</a>
+      <a class="nav-link" href="#phase-k"><span class="phase-dot"></span>K — Test, deploy, rehearse</a>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <div class="hero">
+      <div class="hero-eyebrow">Companion to the Setu Build Plan v2</div>
+      <h1>The step-by-step blueprint: every phase, every file, in order.</h1>
+      <p class="hero-sub">This doc turns the architecture plan into an actual sequence of things to do. Each phase lists exactly what gets built, which files get created or touched, and what "done" looks like before moving to the next one. Work top to bottom — nothing here is meant to be built out of order.</p>
+
+      <div class="how-to-use" id="how-to-use">
+        <div class="htu-card"><div class="htu-num">01</div><p>Each phase is self-contained — finish its "definition of done" checklist before starting the next one. Don't jump ahead.</p></div>
+        <div class="htu-card"><div class="htu-num">02</div><p>Bring one phase's steps to me at a time when we build. I'll write the actual code for each step with you.</p></div>
+        <div class="htu-card"><div class="htu-num">03</div><p>The file structure section below is the map — every file mentioned in later phases lives in the tree exactly where shown.</p></div>
+        <div class="htu-card"><div class="htu-num">04</div><p>Phases tagged <span class="tag backend" style="margin:0 2px;">Backend</span> or <span class="tag frontend" style="margin:0 2px;">Frontend</span> tell you which folder you'll mostly be working in.</p></div>
+      </div>
+    </div>
+
+    <!-- ===== FILE STRUCTURE ===== -->
+    <section id="file-structure">
+      <div class="section-head">
+        <div class="section-kicker">The map</div>
+        <h2>Full file &amp; folder structure</h2>
+        <p>This is the entire project, end to end. Nothing gets created that isn't shown here — and nothing shown here gets created before its phase says to. One repository, two main folders: <code>backend/</code> (Python, FastAPI, the three ML models) and <code>frontend/</code> (React + Vite, the PWA).</p>
+      </div>
+
+      <div class="tree">
+<span class="folder">setu/</span>
+├── <span class="folder">backend/</span>                          <span class="comment"># Python — FastAPI + the 3 ML models</span>
+│   ├── <span class="folder">app/</span>
+│   │   ├── <span class="file">main.py</span>                  <span class="comment"># FastAPI app entrypoint</span>
+│   │   ├── <span class="file">config.py</span>                <span class="comment"># API keys, env vars, settings</span>
+│   │   ├── <span class="file">database.py</span>              <span class="comment"># Supabase/Postgres connection</span>
+│   │   ├── <span class="folder">models/</span>                    <span class="comment"># database table definitions (SQLAlchemy)</span>
+│   │   │   ├── <span class="file">readings.py</span>          <span class="comment"># live + historical AQI/weather rows</span>
+│   │   │   ├── <span class="file">reports.py</span>           <span class="comment"># citizen hazard reports</span>
+│   │   │   └── <span class="file">incidents.py</span>         <span class="comment"># incident log entries</span>
+│   │   ├── <span class="folder">routers/</span>                   <span class="comment"># API endpoints, grouped by purpose</span>
+│   │   │   ├── <span class="file">data.py</span>              <span class="comment"># GET live/historical readings</span>
+│   │   │   ├── <span class="file">predictions.py</span>       <span class="comment"># GET model predictions per city</span>
+│   │   │   ├── <span class="file">alerts.py</span>            <span class="comment"># alert package generation</span>
+│   │   │   ├── <span class="file">reports.py</span>           <span class="comment"># citizen report submit + verify</span>
+│   │   │   ├── <span class="file">replay.py</span>            <span class="comment"># historical replay endpoints</span>
+│   │   │   └── <span class="file">incidents.py</span>         <span class="comment"># incident log + report card endpoints</span>
+│   │   ├── <span class="folder">services/</span>
+│   │   │   ├── <span class="file">ingestion.py</span>         <span class="comment"># scheduled polling of live data APIs</span>
+│   │   │   ├── <span class="file">llm.py</span>               <span class="comment"># alert text + reasoning narration calls</span>
+│   │   │   └── <span class="file">trust_engine.py</span>      <span class="comment"># deterministic confidence scoring</span>
+│   │   └── <span class="folder">ml/</span>
+│   │       ├── <span class="folder">aqi/</span>
+│   │       │   ├── <span class="file">collect.py</span>       <span class="comment"># pulls historical AQI+weather data</span>
+│   │       │   ├── <span class="file">clean.py</span>
+│   │       │   ├── <span class="file">features.py</span>
+│   │       │   ├── <span class="file">train.py</span>
+│   │       │   ├── <span class="file">evaluate.py</span>
+│   │       │   ├── <span class="file">predict.py</span>       <span class="comment"># loads model.pkl, runs live predictions</span>
+│   │       │   ├── <span class="new">model.pkl</span>              <span class="comment"># generated — the trained model</span>
+│   │       │   └── <span class="new">report.json</span>            <span class="comment"># generated — backtest accuracy numbers</span>
+│   │       ├── <span class="folder">cyclone/</span>                <span class="comment"># same 8 files, cyclone version</span>
+│   │       └── <span class="folder">flood/</span>                  <span class="comment"># same 8 files, flood version</span>
+│   ├── <span class="folder">data/</span>
+│   │   ├── <span class="folder">raw/</span>                       <span class="comment"># downloaded historical datasets (gitignored)</span>
+│   │   ├── <span class="folder">processed/</span>                 <span class="comment"># cleaned, feature-engineered versions</span>
+│   │   └── <span class="folder">replay_events/</span>              <span class="comment"># curated real historical events for demo replay</span>
+│   ├── <span class="file">requirements.txt</span>
+│   ├── <span class="file">.env.example</span>
+│   └── <span class="file">.gitignore</span>
+│
+├── <span class="folder">frontend/</span>                         <span class="comment"># React + Vite — the PWA</span>
+│   ├── <span class="folder">public/</span>
+│   │   ├── <span class="file">manifest.json</span>           <span class="comment"># PWA install config</span>
+│   │   └── <span class="folder">icons/</span>
+│   ├── <span class="folder">src/</span>
+│   │   ├── <span class="file">main.jsx</span>
+│   │   ├── <span class="file">App.jsx</span>
+│   │   ├── <span class="folder">pages/</span>
+│   │   │   ├── <span class="file">Dashboard.jsx</span>       <span class="comment"># the main live view</span>
+│   │   │   ├── <span class="file">IncidentTimeline.jsx</span>
+│   │   │   └── <span class="file">ModelReportCard.jsx</span> <span class="comment"># per-model backtest numbers page</span>
+│   │   ├── <span class="folder">components/</span>
+│   │   │   ├── <span class="file">StateMachineBadge.jsx</span> <span class="comment"># Monitoring/Armed/Lost/Fired indicator</span>
+│   │   │   ├── <span class="file">CityCard.jsx</span>
+│   │   │   ├── <span class="file">LocationSearch.jsx</span>
+│   │   │   ├── <span class="file">SimulateDisasterButton.jsx</span>
+│   │   │   ├── <span class="file">HistoricalReplayButton.jsx</span>
+│   │   │   ├── <span class="file">ReportForm.jsx</span>      <span class="comment"># citizen hazard report form</span>
+│   │   │   ├── <span class="file">ConfidenceTrace.jsx</span> <span class="comment"># visible reasoning trace UI</span>
+│   │   │   └── <span class="file">MeshDemo.jsx</span>        <span class="comment"># offline relay demo panel</span>
+│   │   ├── <span class="folder">services/</span>
+│   │   │   ├── <span class="file">api.js</span>              <span class="comment"># calls to the backend</span>
+│   │   │   ├── <span class="file">staging.js</span>          <span class="comment"># local storage / IndexedDB staging logic</span>
+│   │   │   ├── <span class="file">notifications.js</span>    <span class="comment"># local notification firing</span>
+│   │   │   └── <span class="file">mesh.js</span>              <span class="comment"># WebRTC / Web Bluetooth relay logic</span>
+│   │   ├── <span class="file">service-worker.js</span>       <span class="comment"># background trigger checks, offline firing</span>
+│   │   └── <span class="folder">styles/</span>
+│   │       └── <span class="file">theme.css</span>            <span class="comment"># shared design tokens (matches this doc's palette)</span>
+│   ├── <span class="file">package.json</span>
+│   ├── <span class="file">vite.config.js</span>
+│   └── <span class="file">.env.example</span>
+│
+├── <span class="folder">docs/</span>
+│   ├── <span class="file">setu-build-plan-v2.html</span>    <span class="comment"># the architecture doc (already made)</span>
+│   ├── <span class="file">setu-blueprint.html</span>        <span class="comment"># this doc</span>
+│   └── <span class="file">demo-script.md</span>              <span class="comment"># final rehearsed demo script</span>
+│
+├── <span class="file">README.md</span>
+└── <span class="file">.gitignore</span>
+      </div>
+
+      <div class="callout note">
+        <span class="callout-label">Why this shape</span>
+        Backend and frontend are separate top-level folders because they deploy to two different places (Render for backend, a static host for frontend) and are written in two different languages. Each of the three ML models gets an identical internal structure (<code>collect → clean → features → train → evaluate → predict</code>) so once you understand one, you understand all three.
+      </div>
+    </section>
+
+    <!-- ===== PHASE 0 ===== -->
+    <section id="phase-0">
+      <div class="phase-banner"><span class="phase-badge">PHASE 0</span><h2>Accounts &amp; environment setup</h2></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:8px;">Nothing gets built until these accounts exist and keys are in hand. This is a once-only checklist, not ongoing work.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>Create the accounts you'll need</h4></div>
+          <ul class="step-detail-list">
+            <li>GitHub — hosts the code, connects to both deploy targets</li>
+            <li>Render — will host the Python backend</li>
+            <li>Supabase — will host the Postgres database</li>
+            <li>Vercel or Netlify — will host the React frontend (pick one; either works fine)</li>
+            <li>Anthropic or OpenAI account — for the LLM calls (alert text generation, reasoning narration)</li>
+          </ul>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Get free API keys for live data sources</h4></div>
+          <ul class="step-detail-list">
+            <li>OpenAQ — free, no key required for basic use, confirm current requirements</li>
+            <li>OpenWeatherMap — free tier API key</li>
+            <li>AQICN / waqi.info — free API token, request via their site</li>
+            <li>Open-Meteo — free, no key required</li>
+          </ul>
+        </div>
+        <div class="done-box">
+          <div class="db-label">Definition of done</div>
+          <ul>
+            <li>All five accounts created</li>
+            <li>All API keys/tokens saved somewhere safe (a password manager or private note — never committed to git)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PHASE A ===== -->
+    <section id="phase-a">
+      <div class="phase-banner"><span class="phase-badge">PHASE A</span><h2>Foundation skeleton</h2></div>
+      <div class="phase-meta-row"><span class="tag backend">Backend</span><span class="tag frontend">Frontend</span><span class="tag core">Core</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">Get an empty-but-deployed version of both halves live before building any real features — this proves the deployment pipeline works while there's nothing complex to debug yet.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>Initialize the repo and folder skeleton</h4></div>
+          <p class="step-desc">Create the full folder structure shown above (empty folders are fine for now), initialize git, push to GitHub.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div>
+            <span class="file-pill">README.md</span><span class="file-pill">.gitignore</span>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Backend skeleton — a "hello world" FastAPI app</h4></div>
+          <p class="step-desc">A minimal FastAPI app with one working endpoint, deployed to Render, proving the deploy pipeline works before any real logic exists.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div>
+            <span class="file-pill">backend/app/main.py</span><span class="file-pill">backend/app/config.py</span><span class="file-pill">backend/requirements.txt</span><span class="file-pill">backend/.env.example</span>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">3</div><h4>Database setup — Supabase connected to the backend</h4></div>
+          <p class="step-desc">Create the Supabase project, get the connection string, wire it into the backend, confirm the backend can actually read/write to it.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/database.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">4</div><h4>Frontend skeleton — a minimal React+Vite PWA shell</h4></div>
+          <p class="step-desc">Bare React app with the PWA manifest wired up (installable, but with placeholder content), deployed to Vercel/Netlify.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div>
+            <span class="file-pill">frontend/src/main.jsx</span><span class="file-pill">frontend/src/App.jsx</span><span class="file-pill">frontend/public/manifest.json</span><span class="file-pill">frontend/vite.config.js</span><span class="file-pill">frontend/styles/theme.css</span>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">5</div><h4>Connect frontend to backend</h4></div>
+          <p class="step-desc">A basic API service file, and one placeholder call from frontend to backend, confirmed working end-to-end across both live deployments.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/services/api.js</span></div>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>Backend is live on a Render URL and responds to a test request</li>
+          <li>Frontend is live on a Vercel/Netlify URL and can be installed as a PWA</li>
+          <li>Frontend successfully calls the backend and displays something from it</li>
+          <li>Database is connected and can store/retrieve a test row</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== PHASE B ===== -->
+    <section id="phase-b">
+      <div class="phase-banner"><span class="phase-badge">PHASE B</span><h2>Stage 0 — Live data ingestion</h2></div>
+      <div class="phase-meta-row"><span class="tag backend">Backend</span><span class="tag priority">Foundation</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">Real, continuously updating data — the thing every later phase depends on. Ends with your first genuinely impressive visual: a live dashboard showing real numbers.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>Design the database schema for readings</h4></div>
+          <p class="step-desc">A table structure that can hold both live and historical AQI/weather readings per city, with timestamps — this is what every model and the dashboard will query.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/models/readings.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Build the data source client functions</h4></div>
+          <p class="step-desc">One function per source (OpenAQ, OpenWeatherMap, AQICN, Open-Meteo) that fetches current conditions for a given city and returns them in a normalized format.</p>
+          <div class="files-touched"><div class="ft-label">Files touched</div><span class="file-pill">backend/app/services/ingestion.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">3</div><h4>Build the scheduled polling job</h4></div>
+          <p class="step-desc">A recurring job (every few minutes) that pulls current data for each covered metro city and writes it to the database — this is what makes the data "live" rather than a one-time fetch.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">4</div><h4>Expose the data via API endpoints</h4></div>
+          <p class="step-desc">Endpoints the frontend can call: current readings for a city, and historical readings over a time range.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/routers/data.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">5</div><h4>Build the first real dashboard view</h4></div>
+          <p class="step-desc">Replace the frontend's placeholder content with real city cards showing live AQI/weather data pulled from the backend. This is the first moment the app looks like a real product.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div>
+            <span class="file-pill">frontend/src/pages/Dashboard.jsx</span><span class="file-pill">frontend/src/components/CityCard.jsx</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>Data for all covered metro cities is refreshing automatically in the database, not just fetched once</li>
+          <li>The dashboard shows real, current AQI/weather numbers, matching what you'd see on the actual source websites</li>
+          <li>A city's historical readings can be queried back out, not just the latest one</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== PHASE C ===== -->
+    <section id="phase-c">
+      <div class="phase-banner"><span class="phase-badge">PHASE C</span><h2>Model 1 — AQI (build the ML pipeline once, here)</h2></div>
+      <div class="phase-meta-row"><span class="tag backend">Backend</span><span class="tag ml">ML</span><span class="tag priority">Learn the pattern here</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">Your first trained model, and the template every later model reuses. Take this one slowly — once you understand each step here, Cyclone and Flood are the same steps again with different data.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>Collect historical AQI + weather data</h4></div>
+          <p class="step-desc">A script that downloads a multi-year historical dataset for the covered cities from CPCB/OpenAQ archives and Open-Meteo's historical weather data, saving raw files locally.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/ml/aqi/collect.py</span><span class="file-pill">backend/data/raw/aqi_*.csv</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Clean the data</h4></div>
+          <p class="step-desc">Handle missing values, fix mismatched units, remove obviously broken readings, align timestamps across the AQI and weather sources.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/ml/aqi/clean.py</span><span class="file-pill">backend/data/processed/aqi_clean.csv</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">3</div><h4>Engineer features</h4></div>
+          <p class="step-desc">Turn raw cleaned readings into the actual inputs the model learns from: recent AQI history at multiple lags, rate-of-change over recent days, wind speed/direction, humidity, temperature, day-of-year (for seasonal burning patterns).</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/ml/aqi/features.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">4</div><h4>Split into train and test sets — by time, not randomly</h4></div>
+          <p class="step-desc">Older data trains the model, newer data tests it. This step lives inside <code>train.py</code> but is called out on its own because getting it right (never split time-series data randomly) is the most important correctness rule in the whole pipeline.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">5</div><h4>Train the model</h4></div>
+          <p class="step-desc">Train an XGBoost (or LightGBM) regressor on the engineered features to predict AQI 24-72 hours ahead. Save the trained model to disk.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/ml/aqi/train.py</span><span class="file-pill">backend/app/ml/aqi/model.pkl</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">6</div><h4>Evaluate honestly</h4></div>
+          <p class="step-desc">Run the trained model against the held-out test data. Compute accuracy/error margin, precision, recall, and false-positive rate on spike detection. Save the results.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/ml/aqi/evaluate.py</span><span class="file-pill">backend/app/ml/aqi/report.json</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">7</div><h4>Build the live inference function</h4></div>
+          <p class="step-desc">A function that loads the saved model and, given current live readings for a city, returns a prediction plus a confidence score — this is what Stage 1 will call continuously.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/ml/aqi/predict.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">8</div><h4>Expose predictions via API</h4></div>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/routers/predictions.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">9</div><h4>Curate one real historical event for replay</h4></div>
+          <p class="step-desc">Pick one real, well-documented past AQI spike event (e.g. a real Delhi/NCR severe smog episode). Package its lead-up data in the exact format live data would have arrived in, for the historical replay demo built in Phase D.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/data/replay_events/aqi_event.json</span></div>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>A trained model file exists and loads successfully</li>
+          <li>report.json contains real precision/recall/false-positive numbers, not placeholders</li>
+          <li>Given current live data for a covered city, the API returns a real prediction, not a hardcoded value</li>
+          <li>One real historical event is packaged and ready for replay</li>
+        </ul>
+      </div>
+
+      <div class="callout learn">
+        <span class="callout-label">This is the template</span>
+        Every step above, in the same order, is exactly what Phase E (Cyclone) and Phase F (Flood) repeat. Once this phase is done and understood, those two phases will move much faster.
+      </div>
+    </section>
+
+    <!-- ===== PHASE D ===== -->
+    <section id="phase-d">
+      <div class="phase-banner"><span class="phase-badge">PHASE D</span><h2>Stage 1 — Pre-staging &amp; local-fire (the headline mechanism)</h2></div>
+      <div class="phase-meta-row"><span class="tag frontend">Frontend</span><span class="tag backend">Backend</span><span class="tag priority">Must work flawlessly</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">This is what makes Setu different from every other alert app. Build it against the real AQI model first — Cyclone and Flood plug into the same mechanism later for free.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>Alert package generation (LLM call)</h4></div>
+          <p class="step-desc">When the AQI model's confidence crosses a threshold, call a fast LLM to generate severity tier, plain-language explanation grounded in the model's real predicted number, and recommended action. Use a fast, streaming-capable model for demo pacing.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/services/llm.py</span><span class="file-pill">backend/app/routers/alerts.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Push and store the staged package on-device</h4></div>
+          <p class="step-desc">Frontend receives the generated package while online and stores it in IndexedDB/local storage, along with its trigger condition — not displayed yet, just staged.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/services/staging.js</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">3</div><h4>Set up the service worker</h4></div>
+          <p class="step-desc">Registers on app load, periodically checks staged packages against their trigger conditions, independent of any network call.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/service-worker.js</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">4</div><h4>Local notification firing</h4></div>
+          <p class="step-desc">When a trigger condition is met, the service worker fires a local notification using the already-staged content — no server round-trip.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/services/notifications.js</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">5</div><h4>Build the visible state machine UI</h4></div>
+          <p class="step-desc">A component showing Monitoring → Armed → Network Lost → Fired, wired to the real staging/firing logic above, not just a static graphic.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/components/StateMachineBadge.jsx</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">6</div><h4>Build the "Simulate a disaster" control</h4></div>
+          <p class="step-desc">A button that walks the full pipeline end-to-end on demand, including an in-app toggle that simulates network loss (isolating the variable cleanly, without touching real connectivity) before showing the local fire happen anyway.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/components/SimulateDisasterButton.jsx</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">7</div><h4>Build the "Historical replay" control</h4></div>
+          <p class="step-desc">Replays the curated real AQI event from Phase C step 9 through the exact same pipeline, showing prediction confidence rise in real time as the replayed data approaches the real historical event.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div>
+            <span class="file-pill">frontend/src/components/HistoricalReplayButton.jsx</span><span class="file-pill">backend/app/routers/replay.py</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>An alert can be staged while online, then fire correctly with the in-app network-loss toggle active — no real connectivity needed at fire time</li>
+          <li>The state machine badge visibly and correctly reflects each transition</li>
+          <li>Both simulate and historical replay controls run the full pipeline start to finish without manual intervention</li>
+          <li>Tested and confirmed working specifically on Android Chrome</li>
+        </ul>
+      </div>
+
+      <div class="callout risk">
+        <span class="callout-label">Don't skip this</span>
+        Test the "app was recently opened" path thoroughly — this is the reliable path for your live demo. Don't rely on the "long idle, never reopened, especially iPhone" path; it's known to be unreliable per the platform limitations already documented in the build plan.
+      </div>
+    </section>
+
+    <!-- ===== PHASE E ===== -->
+    <section id="phase-e">
+      <div class="phase-banner"><span class="phase-badge">PHASE E</span><h2>Model 2 — Cyclone</h2></div>
+      <div class="phase-meta-row"><span class="tag backend">Backend</span><span class="tag ml">ML</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">Same nine steps as Phase C, different data and features. Scoped to landfall risk and intensity trend for an already-tracked storm — not full track forecasting.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1–9</div><h4>Repeat the Phase C pipeline for cyclone data</h4></div>
+          <ul class="step-detail-list">
+            <li>Collect IMD RSMC New Delhi best-track data and/or IBTrACS (NOAA) historical cyclone data</li>
+            <li>Clean and align by storm ID and 6-hourly timestep</li>
+            <li>Engineer features: central pressure, wind speed, pressure drop rate, track position/direction, sea surface temperature, season</li>
+            <li>Time-based train/test split (split by storm/season, not randomly)</li>
+            <li>Train a classification model for landfall probability + regression for intensity trend</li>
+            <li>Evaluate honestly, save report.json</li>
+            <li>Build the live inference function</li>
+            <li>Expose via the same predictions router</li>
+            <li>Curate one real named historical cyclone (e.g. Amphan) for replay</li>
+          </ul>
+          <div class="files-touched"><div class="ft-label">Files created</div>
+            <span class="file-pill">backend/app/ml/cyclone/*.py</span><span class="file-pill">backend/app/ml/cyclone/model.pkl</span><span class="file-pill">backend/app/ml/cyclone/report.json</span><span class="file-pill">backend/data/replay_events/cyclone_event.json</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>Same checklist as Phase C, applied to cyclone data</li>
+          <li>Cyclone predictions flow through the exact same Stage 1 pre-staging pipeline built in Phase D, with no changes needed to that pipeline itself</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== PHASE F ===== -->
+    <section id="phase-f">
+      <div class="phase-banner"><span class="phase-badge">PHASE F</span><h2>Model 3 — Flood</h2></div>
+      <div class="phase-meta-row"><span class="tag backend">Backend</span><span class="tag ml">ML</span><span class="tag note">Hardest data, build last</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">Same pipeline again, but budget more time for cleaning — this is the weakest data situation of the three, as flagged in the build plan.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1–9</div><h4>Repeat the pipeline for flood data</h4></div>
+          <ul class="step-detail-list">
+            <li>Collect a curated rainfall-flood dataset (regional CSVs) as the primary source; layer in India-WRIS river data opportunistically, expecting manual curation work</li>
+            <li>Clean — expect this step to take longer here than for AQI or cyclone</li>
+            <li>Engineer features: rainfall accumulation over recent days, regional historical flood-proneness, available discharge data</li>
+            <li>Time-based train/test split</li>
+            <li>Train a classification model for flood risk tier</li>
+            <li>Evaluate honestly — expect coarser numbers than the other two models, and say so in the report</li>
+            <li>Build live inference function, expose via API</li>
+            <li>Curate one real historical flood event for replay</li>
+          </ul>
+          <div class="files-touched"><div class="ft-label">Files created</div>
+            <span class="file-pill">backend/app/ml/flood/*.py</span><span class="file-pill">backend/app/ml/flood/model.pkl</span><span class="file-pill">backend/app/ml/flood/report.json</span><span class="file-pill">backend/data/replay_events/flood_event.json</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>Same checklist as Phase C/E, applied to flood data</li>
+          <li>report.json for flood is honest about lower confidence/precision than AQI or cyclone, if that's what the numbers show — don't inflate this</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== PHASE G ===== -->
+    <section id="phase-g">
+      <div class="phase-banner"><span class="phase-badge">PHASE G</span><h2>Stage 2 — Trust &amp; verification engine</h2></div>
+      <div class="phase-meta-row"><span class="tag backend">Backend</span><span class="tag frontend">Frontend</span><span class="tag core">Core</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">Handles brand-new, unpredicted hazards reported by citizens. Algorithm decides the number, LLM only explains it — per the earlier correction to v1's design.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>Build the citizen report schema and submission form</h4></div>
+          <div class="files-touched"><div class="ft-label">Files created</div>
+            <span class="file-pill">backend/app/models/reports.py</span><span class="file-pill">backend/app/routers/reports.py</span><span class="file-pill">frontend/src/components/ReportForm.jsx</span>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Build the deterministic confidence scoring algorithm</h4></div>
+          <p class="step-desc">Plain computation — no LLM: cross-check the report's location/time against live Stage 0 data, count corroborating nearby reports within a time window, factor in reporter history if available. Outputs a numeric confidence score.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/services/trust_engine.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">3</div><h4>Add the LLM narration layer</h4></div>
+          <p class="step-desc">A separate call that takes the algorithm's already-computed score and factors, and narrates the reasoning in plain language — the LLM never decides the number itself.</p>
+          <div class="files-touched"><div class="ft-label">Files touched</div><span class="file-pill">backend/app/services/llm.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">4</div><h4>Build the visible reasoning trace UI</h4></div>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/components/ConfidenceTrace.jsx</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">5</div><h4>Wire verified reports into the Stage 1 pre-staging pipeline</h4></div>
+          <p class="step-desc">High-confidence reports feed the same staging/firing mechanism built in Phase D — same pipeline, a new trigger source.</p>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>Submitting a report produces a real, computed confidence number, not an LLM-invented one</li>
+          <li>The reasoning trace visibly explains the real factors behind that number</li>
+          <li>A high-confidence report can trigger the same staging/firing sequence as a model prediction</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== PHASE H ===== -->
+    <section id="phase-h">
+      <div class="phase-banner"><span class="phase-badge">PHASE H</span><h2>Stage 4 — Incident log</h2></div>
+      <div class="phase-meta-row"><span class="tag backend">Backend</span><span class="tag frontend">Frontend</span><span class="tag simple">Simple — mostly a read view</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">Deliberately the easiest phase — a read-only view over data every earlier phase is already writing.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>Add the incident log schema</h4></div>
+          <p class="step-desc">Every prediction crossing threshold, staged package, citizen report, verification decision, and fired alert gets a timestamped row.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">backend/app/models/incidents.py</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Expose it via API and build the public timeline page</h4></div>
+          <div class="files-touched"><div class="ft-label">Files created</div>
+            <span class="file-pill">backend/app/routers/incidents.py</span><span class="file-pill">frontend/src/pages/IncidentTimeline.jsx</span>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">3</div><h4>Build the model report card page</h4></div>
+          <p class="step-desc">A simple page displaying each model's report.json (accuracy, precision, recall, false-positive rate) honestly, side by side.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/pages/ModelReportCard.jsx</span></div>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>Every action taken by earlier phases shows up correctly, timestamped, in the public timeline</li>
+          <li>All three models' real backtest numbers are visible on one page</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== PHASE I ===== -->
+    <section id="phase-i">
+      <div class="phase-banner"><span class="phase-badge">PHASE I</span><h2>Stage 5 — Dashboard polish &amp; small extras</h2></div>
+      <div class="phase-meta-row"><span class="tag frontend">Frontend</span><span class="tag simple">Polish</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">Everything functional already exists by this point — this phase makes it feel finished and adds the cheap extras from the build plan.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>Location search with tiered coverage</h4></div>
+          <p class="step-desc">Free-text search for any location; covered metro cities get full trained predictions, everything else gets a clearly labeled fallback estimate.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/components/LocationSearch.jsx</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Multi-language alert text</h4></div>
+          <p class="step-desc">Extend the Phase D alert-generation LLM call to also output additional languages, nearly for free.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">3</div><h4>Per-region trust score</h4></div>
+          <p class="step-desc">A simple aggregate computed from report history in Stage 2's data — no new subsystem needed.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">4</div><h4>Visual polish pass</h4></div>
+          <p class="step-desc">Consistent design system across every page, matching the color logic already established (green=verified/monitoring, amber=armed/watch, red=fired/severe).</p>
+          <div class="files-touched"><div class="ft-label">Files touched</div><span class="file-pill">frontend/src/styles/theme.css</span></div>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>Typing an uncovered location shows a clearly labeled fallback, not a silent guess</li>
+          <li>Alert text generates in at least one additional language on request</li>
+          <li>Every page shares the same visual language — no jarring style breaks between sections</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== PHASE J ===== -->
+    <section id="phase-j">
+      <div class="phase-banner"><span class="phase-badge">PHASE J</span><h2>Stage 3 — Offline relay (mesh)</h2></div>
+      <div class="phase-meta-row"><span class="tag frontend">Frontend</span><span class="tag core">Built last, deliberately</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">The most technically uncertain piece, sequenced last so the rest of the product stands fine without it if time runs short anywhere earlier.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>Build the peer connection logic</h4></div>
+          <p class="step-desc">WebRTC or Web Bluetooth connection setup between two to three pre-paired devices/browser tabs.</p>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/services/mesh.js</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Relay a staged alert from a connected device to a disconnected one</h4></div>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">frontend/src/components/MeshDemo.jsx</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">3</div><h4>Wire it into the Simulate/Replay demo flows</h4></div>
+          <p class="step-desc">The relay step becomes the final beat of the demo sequence already built in Phase D.</p>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>A real message relay between two to three devices works reliably on Android Chrome, tested repeatedly</li>
+          <li>The pitch/demo language stays scoped to "small-scale proof-of-concept," never "citywide mesh"</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== PHASE K ===== -->
+    <section id="phase-k">
+      <div class="phase-banner"><span class="phase-badge">PHASE K</span><h2>Test, deploy, rehearse</h2></div>
+      <div class="phase-meta-row"><span class="tag core">Final</span></div>
+      <p style="color:var(--text-dim); font-size:15px; max-width:700px; margin-top:14px;">Everything is built. This phase makes sure it survives an actual live demo in front of judges.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">1</div><h4>End-to-end test of the full demo script</h4></div>
+          <p class="step-desc">Run through the entire demo script from the build plan doc, start to finish, without stopping to fix anything mid-run — note every friction point.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">2</div><h4>Deployment health check</h4></div>
+          <ul class="step-detail-list">
+            <li>All environment variables set correctly on both Render and the frontend host</li>
+            <li>Supabase connection stable under repeated use</li>
+            <li>Scheduled data polling confirmed still running continuously</li>
+          </ul>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">3</div><h4>Write the final demo script</h4></div>
+          <div class="files-touched"><div class="ft-label">Files created</div><span class="file-pill">docs/demo-script.md</span></div>
+        </div>
+        <div class="step-card">
+          <div class="step-top"><div class="step-num">4</div><h4>Rehearse, timed</h4></div>
+          <p class="step-desc">Run the full demo several times against a clock, on the actual device(s) you'll use for judging, until it's smooth and repeatable.</p>
+        </div>
+      </div>
+
+      <div class="done-box">
+        <div class="db-label">Definition of done</div>
+        <ul>
+          <li>The full demo script runs cleanly, twice in a row, with no manual fixes needed between runs</li>
+          <li>Both live URLs (frontend + backend) are stable and don't need a local dev server to work</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>SETU — STEP-BY-STEP BUILD BLUEPRINT — COMPANION TO BUILD PLAN V2 — SOLO / VIBE-CODED</footer>
+  </main>
+</div>
+</body>
+</html>

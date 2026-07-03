@@ -1,0 +1,43 @@
+/*
+  Setu — shared design tokens.
+  Same palette as the build-plan and blueprint docs, so the app looks
+  like a continuation of that design system, not a different product.
+*/
+
+:root {
+  --bg: #11161C;
+  --bg-raised: #161D26;
+  --bg-card: #1A222C;
+  --line: #283140;
+  --line-soft: #1F2733;
+
+  --text: #EDEFF2;
+  --text-dim: #8A93A3;
+  --text-faint: #5C6675;
+
+  --amber: #F5A623;   /* armed / watch */
+  --red: #E5484D;     /* fired / severe */
+  --green: #3DD68C;   /* monitoring / verified */
+  --blue: #4FA3F7;
+
+  --mono: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  --sans: 'Inter', -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}

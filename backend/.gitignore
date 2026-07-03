@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Trained models and raw data are usually too large / regeneratable —
+# keep them out of git. Delete these two lines later if you decide
+# small model.pkl files are fine to commit.
+data/raw/
+*.pkl
