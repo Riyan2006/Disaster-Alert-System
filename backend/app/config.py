@@ -24,9 +24,12 @@ class Settings(BaseSettings):
     # Live data source API keys — set in Phase B
     openweathermap_api_key: str = ""
     aqicn_api_token: str = ""
+    openaq_api_key: str = ""
 
     # LLM provider key — set in Phase D
-    anthropic_api_key: str = ""
+    # Using Gemini's free tier (Flash/Flash-Lite models) instead of a paid
+    # provider. See backend/.env.example for where to get this key.
+    gemini_api_key: str = ""
 
 
 @lru_cache

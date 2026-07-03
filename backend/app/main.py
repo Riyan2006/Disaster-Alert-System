@@ -2,14 +2,18 @@
 Setu backend — FastAPI app entrypoint.
 
 This is intentionally minimal right now (Phase A). Its only job at this
-stage is to prove the app boots and responds. Real endpoints get added
-router by router in later phases (see backend/app/routers/).
+stage is to prove the app boots, responds, and can reach the database.
+Real endpoints get added router by router in later phases (see
+backend/app/routers/).
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.database import get_db
 
 settings = get_settings()
 
@@ -46,6 +50,23 @@ def read_root():
 def health_check():
     """Separate health endpoint, useful for uptime monitoring later."""
     return {"status": "healthy"}
+
+
+@app.get("/db-check")
+def db_check(db: Session = Depends(get_db)):
+    """
+    TEMPORARY — Phase A only.
+
+    Proves the backend can actually reach Supabase: runs the simplest
+    possible query (SELECT 1) and reports success or failure. Delete
+    this endpoint once Phase B adds real tables and real queries to
+    prove connectivity through — it'll have served its purpose.
+    """
+    try:
+        db.execute(text("SELECT 1"))
+        return {"database": "connected"}
+    except Exception as e:
+        return {"database": "error", "detail": str(e)}
 
 
 # Routers get included here as each phase builds them, e.g.:
