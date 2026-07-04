@@ -20,3 +20,11 @@ export async function pingBackend() {
   }
   return response.json();
 }
+
+export async function apiGet(endpoint) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`);
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+  return response.json();
+}
