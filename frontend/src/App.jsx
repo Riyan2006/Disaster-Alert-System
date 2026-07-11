@@ -1,4 +1,4 @@
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./src/pages/Dashboard";
 import "./styles/theme.css";
 
 function App() {

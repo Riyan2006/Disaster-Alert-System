@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "../services/api";
-import CityCard from "../components/CityCard";
+import CityCard from "../src/components/citycard";
 
 export default function Dashboard() {
   const [cities, setCities] = useState([]);
