@@ -18,6 +18,7 @@ from app.database import Base
 class ReadingType(str, enum.Enum):
     AQI = "aqi"
     WEATHER = "weather"
+    FLOOD = "flood"
 
 
 class Reading(Base):
@@ -58,6 +59,18 @@ class Reading(Base):
     weather_precipitation = Column(Float, nullable=True)   # mm
     weather_visibility = Column(Float, nullable=True)      # km
     weather_cloud_cover = Column(Float, nullable=True)     # %
+    weather_dew_point = Column(Float, nullable=True)       # Celsius
+    weather_apparent_temp = Column(Float, nullable=True)   # Celsius, "feels like"
+    weather_wind_gusts = Column(Float, nullable=True)      # m/s
+
+    # Flood fields — null on non-flood rows. Ensemble spread, not just
+    # one number — the mean/median/max/min capture forecast uncertainty,
+    # which matters for a real risk assessment, not just a point value.
+    flood_river_discharge = Column(Float, nullable=True)          # m^3/s
+    flood_river_discharge_mean = Column(Float, nullable=True)
+    flood_river_discharge_median = Column(Float, nullable=True)
+    flood_river_discharge_max = Column(Float, nullable=True)
+    flood_river_discharge_min = Column(Float, nullable=True)
 
     __table_args__ = (
         Index("idx_city_type_recorded", "city", "reading_type", "recorded_at"),

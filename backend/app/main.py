@@ -16,6 +16,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.database import engine, Base
 from app.models.readings import Reading  # noqa: F401 — import ensures the table is registered
+from app.models.cyclone_observations import CycloneObservation  # noqa: F401 — same reason
+from app.models.station_readings import CityStationReading  # noqa: F401 — same reason
 from app.services.ingestion import poll_and_store_loop
 from app.routers import data as data_router
 
